@@ -1,0 +1,9 @@
+tags
+*.*
+!.gitignore
+!readme.md
+!.gitkeep
+!.gitattributes
+!*.py
+!*/
+tuner/
