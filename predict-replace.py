@@ -10,10 +10,10 @@ import numpy as np
 
 image_height, image_width = 300, 300
 m = load_model('/home/dave/Projects/tensorflow/windscreens/repair-replace-transfer')
-directory = os.fsencode('/home/dave/Projects/tensorflow/windscreens/images/resizing') 
+directory = os.fsencode('/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/check/replace') 
 f = open('replace-predictions-transfer-resizing.csv', 'w', newline='')
 writer = csv.writer(f)
-writer.writerow(['filename', 'classification', 'percentage1', 'percentage2'])
+writer.writerow(['filename', 'classification', 'percentage1'])
 count = 0
 for file in os.listdir(directory):
     filename = os.fsdecode(file)
@@ -25,9 +25,8 @@ for file in os.listdir(directory):
     
     classes = m.predict(image_tensor)
     percentage1 =  classes[0][0]*100
-    percentage2 =  classes[1][0]*100
 
-    writer.writerow([str(filename), str("{:.2f}".format(classes[0][0])), str("{:.2f}".format(percentage1)), str("{:.2f}".format(percentage1))])
+    writer.writerow([str(filename), str("{:.2f}".format(classes[0][0])), str("{:.2f}".format(percentage1))])
 
 f.close()
 
