@@ -11,7 +11,7 @@ import numpy as np
 image_height, image_width = 300, 300
 m = load_model('/home/dave/Projects/tensorflow/windscreens/repair-replace')
 directory = os.fsencode('/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/check/replace') 
-f = open('replace-preidctions.csv', 'w', newline='')
+f = open('replace-preidctions.csv', 'a', newline='')
 writer = csv.writer(f)
 writer.writerow(['filename', 'classification', 'percentage'])
 count = 0
@@ -25,7 +25,7 @@ for file in os.listdir(directory):
     
     classes = m.predict(image_tensor)
     print(filename)
-    print(classes[0][0])
+    print(classes)
     percentage =  classes[0][0]*100
 
     writer.writerow([str(filename), str("{:.2f}".format(classes[0][0])), str("{:.2f}".format(percentage)) + '%'])

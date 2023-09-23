@@ -10,8 +10,8 @@ import numpy as np
 
 image_height, image_width = 300, 300
 m = load_model('/home/dave/Projects/tensorflow/windscreens/usable')
-directory = os.fsencode('/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/train/replace') 
-f = open('usable.csv', 'w', newline='')
+directory = os.fsencode('/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/check/replace') 
+f = open('usable.csv', 'a', newline='')
 writer = csv.writer(f)
 writer.writerow(['filename', 'classification', 'percentage'])
 count = 0
@@ -27,8 +27,8 @@ for file in os.listdir(directory):
     print(filename)
     print(classes[0][0])
     percentage =  classes[0][0]*100
-    if classes[0][0] == 0:
-        os.rename(image_path, "/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/train/replace/unusable/" + filename)
+#    if classes[0][0] == 0:
+#        os.rename(image_path, "/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/train/replace/unusable/" + filename)
 
     writer.writerow([str(filename), str("{:.2f}".format(classes[0][0])), str("{:.2f}".format(percentage)) + '%'])
 
