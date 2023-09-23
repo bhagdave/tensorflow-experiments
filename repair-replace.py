@@ -6,7 +6,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout, RandomFlip, RandomRotation
 from tensorflow.keras.optimizers import Adam
 
-image_folder = '/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted'
+image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace'
@@ -55,6 +55,7 @@ train_datagen = ImageDataGenerator(
 train_generator = train_datagen.flow_from_directory(
             os.path.join(image_folder, 'train/'),
             target_size=(image_width, image_height),
+            batch_size=10,
             class_mode='categorical'
 )
 test_datagen = ImageDataGenerator(
@@ -62,6 +63,7 @@ test_datagen = ImageDataGenerator(
 )
 test_generator = train_datagen.flow_from_directory(
             os.path.join(image_folder, 'validate/'),
+            batch_size=10,
             target_size=(image_width, image_height),
             class_mode='categorical'
 )

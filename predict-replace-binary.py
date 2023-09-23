@@ -9,9 +9,9 @@ import numpy as np
 
 
 image_height, image_width = 300, 300
-m = load_model('/home/dave/Projects/tensorflow/tensorflow-experiments/repair-replace-cross')
+m = load_model('/home/dave/Projects/tensorflow/tensorflow-experiments/repair-replace-binary')
 directory = os.fsencode('/home/dave/Projects/tensorflow/tensorflow-experiments/images/test/replace') 
-f = open('replace-category.csv', 'w', newline='')
+f = open('replace-binary.csv', 'w', newline='')
 writer = csv.writer(f)
 writer.writerow(['filename', 'classification', 'percentage'])
 count = 0
@@ -24,10 +24,10 @@ for file in os.listdir(directory):
     image_tensor = np.vstack([x])
     
     classes = m.predict(image_tensor)
-    percentage1 =  classes[0][1]*100
+    percentage1 =  classes[0][0]*100
     print(classes)
 
-    writer.writerow([str(filename), str("{:.2f}".format(classes[0][1])), str("{:.2f}".format(percentage1))])
+    writer.writerow([str(filename), str("{:.2f}".format(classes[0][0])), str("{:.2f}".format(percentage1))])
 
 f.close()
 

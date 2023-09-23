@@ -68,23 +68,6 @@ test_generator = train_datagen.flow_from_directory(
 )
 
 
-#model = Sequential([
-#    Conv2D(16, (3,3), activation='relu', input_shape=(300, 300, 3)),
-#    MaxPooling2D(2, 2),
-#    Conv2D(32, (3,3), activation='relu') ,
-#    MaxPooling2D(2, 2),
-#    Conv2D(64, (3,3), activation='relu') ,
-#    MaxPooling2D(2, 2),
-#    Conv2D(64, (3,3), activation='relu') ,
-#    MaxPooling2D(2, 2),
-#    Conv2D(64, (3,3), activation='relu') ,
-#    MaxPooling2D(2, 2),
-#    Flatten(),
-#    Dense(512, activation='relu'),
-#    Dense(256, activation='relu'),
-#    Dense(128, activation='relu'),
-#    Dense(1, activation='sigmoid')
-#])
 tuner.search(train_generator,epochs=25, validation_data=test_generator, callbacks=[stop_early])
 best_hps=tuner.get_best_hyperparameters(num_trials=1)[0]
 #model = tuner.hypermodel.build(best_hps)
@@ -95,7 +78,3 @@ best_hps=tuner.get_best_hyperparameters(num_trials=1)[0]
 hypermodel = tuner.hypermodel.build(best_hps)
 hypermodel.fit(train_generator,epochs=50, validation_data=test_generator)
 hypermodel.save(model_name)
-#model.compile(loss='binary_crossentropy', optimizer=RMSprop(learning_rate=0.001), metrics=['accuracy'])
-#model.fit(train_generator, epochs=25, validation_data=test_generator)
-#model.save(model_name)
-#model.summary()

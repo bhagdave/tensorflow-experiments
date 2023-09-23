@@ -30,7 +30,7 @@ x = layers.Dense(1, activation='sigmoid')(x)
 model = Model(pre_trained_model.input, x)
 model.compile(loss='binary_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=['accuracy'])
 
-image_folder = '/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted'
+image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace-transfer'
@@ -44,18 +44,18 @@ train_datagen = ImageDataGenerator(
         zoom_range=0.2
 )
 train_generator = train_datagen.flow_from_directory(
-            '/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/train',
+            os.path.join(image_folder, 'train/'),
             target_size=(image_width, image_height),
-            batch_size=100,
+            batch_size=10,
             class_mode='binary'
 )
 test_datagen = ImageDataGenerator(
         rescale=1./255, 
 )
 test_generator = train_datagen.flow_from_directory(
-            '/home/dave/Projects/tensorflow/windscreens/images/windscreens_sorted/validate',
+            os.path.join(image_folder, 'validate/'),
             target_size=(image_width, image_height),
-            batch_size=100,
+            batch_size=10,
             class_mode='binary'
 )
 
