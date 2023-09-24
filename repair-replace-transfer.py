@@ -61,5 +61,5 @@ test_generator = train_datagen.flow_from_directory(
 
 model.fit_generator(train_generator, epochs=40, validation_data=test_generator)
 
-model.save(model_name)
+model.save(f"{model_name}.h5")
 
