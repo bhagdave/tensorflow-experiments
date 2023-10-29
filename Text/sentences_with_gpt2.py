@@ -103,7 +103,7 @@ print("Output logits:", output_logits)
 model.summary()
 # Compile the model again
 optimizer = tf.keras.optimizers.Adam(learning_rate=3e-5)
-model.compile(optimizer=optimizer, loss=custom_loss_with_debug)
+model.compile(optimizer=optimizer)
 
 # Train the model
-model.fit(data, labels, epochs=3, batch_size=2)
+model.fit(data, labels, epochs=3, batch_size=16)
