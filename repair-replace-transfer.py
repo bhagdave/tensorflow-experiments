@@ -25,9 +25,9 @@ last_layer = pre_trained_model.get_layer('mixed7')
 last_output = last_layer.output
 x = Flatten()(last_output)
 x = layers.Dense(1024, activation='relu')(x)
-x = layers.Dense(1, activation='sigmoid')(x)
+x = layers.Dense(4, activation='softmax')(x)
 model = Model(pre_trained_model.input, x)
-model.compile(loss='binary_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=['accuracy'])
 
 image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images'
 image_height = 300
@@ -46,7 +46,7 @@ train_generator = train_datagen.flow_from_directory(
             os.path.join(image_folder, 'train/'),
             target_size=(image_width, image_height),
             batch_size=10,
-            class_mode='binary'
+            class_mode='categorical'
 )
 test_datagen = ImageDataGenerator(
         rescale=1./255, 
@@ -55,7 +55,7 @@ test_generator = train_datagen.flow_from_directory(
             os.path.join(image_folder, 'validate/'),
             target_size=(image_width, image_height),
             batch_size=10,
-            class_mode='binary'
+            class_mode='categorical'
 )
 
 model.fit_generator(train_generator, epochs=40, validation_data=test_generator)
