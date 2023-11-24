@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_hub as hub
 import urllib.request
 import os
 from tensorflow.keras import layers
