@@ -12,11 +12,16 @@ os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images-new'
 image_height = 300
 image_width = 300
-model_name = 'repair-replace-cross'
+model_name = 'repair-replace-cross-distributed'
+per_worker_batch_size = 16
+tf_config = json.loads(os.environ['TF_CONFIG'])
+tf_config['task']['timeout'] = '600s'
+num_workers = len(tf_config['cluster']['worker'])
+global_batch_size = per_worker_batch_size * num_workers
+print('Global batch size: {}'.format(global_batch_size))
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=20, class_mode='categorical'):
-        print("Initializing CustomImageDataGenerator")
         self.directory = directory
         self.image_width = image_width
         self.image_height = image_height
@@ -25,7 +30,6 @@ class CustomImageDataGenerator:
         self.image_files = self.collect_image_files()
 
     def collect_image_files(self):
-        print("Collecting image files")
         image_files = {}
 
         for category in os.listdir(self.directory):
@@ -42,7 +46,6 @@ class CustomImageDataGenerator:
         return sum(len(files) for files in self.image_files.values())
 
     def generate_data(self, is_training=True):
-        print("Generating data")
         categories = os.listdir(self.directory)  # List of category folder names
         all_cases = []  # Collect all cases in all categories
 
@@ -98,7 +101,6 @@ class CustomImageDataGenerator:
 
 
 def f1_score(y_true, y_pred):
-    print("Calculating F1 score")
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
@@ -108,43 +110,85 @@ def f1_score(y_true, y_pred):
     return f1_val
 
 # Initialize the CustomImageDataGenerator for training and validation
-train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=20)
-validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=20)
+train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=per_worker_batch_size)
+validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=per_worker_batch_size)
+#train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=20)
+#validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=20)
 
-def model_builder():
-    print("Building model")
-    model = Sequential()
-    model.add(Conv2D(112, (3,3), activation='relu', input_shape=(image_height, image_width, 3)))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(192, (3,3), activation='relu') )
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(96, (3,3), activation='relu') )
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(160, (3,3), activation='relu') )
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(96, (3,3), activation='relu') )
-    model.add(MaxPooling2D(2, 2))
-    model.add(Flatten())
-    model.add(Dropout(0.5))
-    model.add(Dense(112, activation='relu'))
-    model.add(Dense(240, activation='relu'))
-    model.add(Dense(48, activation='relu'))
-    model.add(Dense(4, activation='softmax'))
-    return model
-
-model = model_builder()
-model.summary()
-model.compile(
-    loss='categorical_crossentropy', 
-    optimizer='adam', 
-    metrics=['accuracy', f1_score]
+strategy = tf.distribute.experimental.ParameterServerStrategy(
+    cluster_resolver=tf.distribute.cluster_resolver.TFConfigClusterResolver()
 )
 
-print("Training model")
+#strategy = tf.distribute.MultiWorkerMirroredStrategy(cluster_resolver=cluster_resolver)
+with strategy.scope():
+    def model_builder():
+        model = Sequential()
+        model.add(Conv2D(112, (3,3), activation='relu', input_shape=(image_height, image_width, 3),groups=1))
+        model.add(MaxPooling2D(2, 2))
+#        model.add(Conv2D(192, (3,3), activation='relu', groups=1) )
+#        model.add(MaxPooling2D(2, 2))
+#        model.add(Conv2D(96, (3,3), activation='relu', groups=1) )
+#        model.add(MaxPooling2D(2, 2))
+#        model.add(Conv2D(160, (3,3), activation='relu', groups=1) )
+#        model.add(MaxPooling2D(2, 2))
+#        model.add(Conv2D(96, (3,3), activation='relu', groups=1) )
+#        model.add(MaxPooling2D(2, 2))
+        model.add(Flatten())
+#        model.add(Dropout(0.5))
+        model.add(Dense(112, activation='relu'))
+#        model.add(Dense(240, activation='relu'))
+#        model.add(Dense(48, activation='relu'))
+        model.add(Dense(4, activation='softmax'))
+        return model
+
+    model = model_builder()
+    model.summary()
+    model.compile(
+        loss='categorical_crossentropy', 
+        optimizer='adam', 
+        metrics=['accuracy', f1_score]
+    )
+
+# Determine the steps per epoch for training and validation
+steps_per_epoch = train_generator.calculate_num_samples() // global_batch_size
+validation_steps = validation_generator.calculate_num_samples() // global_batch_size
+
+#def model_builder():
+#    model = Sequential()
+#    model.add(Conv2D(112, (3,3), activation='relu', input_shape=(image_height, image_width, 3)))
+#    model.add(MaxPooling2D(2, 2))
+#    model.add(Conv2D(192, (3,3), activation='relu') )
+#    model.add(MaxPooling2D(2, 2))
+#    model.add(Conv2D(96, (3,3), activation='relu') )
+#    model.add(MaxPooling2D(2, 2))
+#    model.add(Conv2D(160, (3,3), activation='relu') )
+#    model.add(MaxPooling2D(2, 2))
+#    model.add(Conv2D(96, (3,3), activation='relu') )
+#    model.add(MaxPooling2D(2, 2))
+#    model.add(Flatten())
+#    model.add(Dropout(0.5))
+#    model.add(Dense(112, activation='relu'))
+#    model.add(Dense(240, activation='relu'))
+#    model.add(Dense(48, activation='relu'))
+#    model.add(Dense(4, activation='softmax'))
+#    return model
+#
+#model = model_builder()
+#model.summary()
+#model.compile(
+#    loss='categorical_crossentropy', 
+#    optimizer='adam', 
+#    metrics=['accuracy', f1_score]
+#)
+
+print('Steps per epoch (training): {}'.format(steps_per_epoch))
+print('Steps per epoch (validation): {}'.format(validation_steps))
+
 # Fit the model
 model.fit(
     train_generator.generate_data(),
     epochs=4,
+    steps_per_epoch=10,
     validation_data=validation_generator.generate_data(),
     validation_steps=10,
     verbose=1
