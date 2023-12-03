@@ -5,7 +5,7 @@ import random
 import json
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import backend as K
@@ -119,26 +119,30 @@ validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'vali
 def model_builder():
     model = Sequential()
     model.add(DepthwiseConv2D((3,3), activation='relu', input_shape=(image_height, image_width, 6)))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
     model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
     model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
     model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
-    model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(DepthwiseConv2D( (3,3), activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
     model.add(Flatten())
     model.add(Dropout(0.5))
-    model.add(Dense(112, activation='relu'))
-    model.add(Dense(240, activation='relu'))
-    model.add(Dense(48, activation='relu'))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dense(4, activation='softmax'))
     return model
 
 
 
-optimizer = Adam(learning_rate=0.01)
+optimizer = Adam(learning_rate=0.00001)
 
 model = model_builder()
 model.summary()
