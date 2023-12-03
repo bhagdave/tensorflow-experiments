@@ -5,7 +5,9 @@ import random
 import json
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import backend as K
 import numpy as np
 from PIL import Image
@@ -19,7 +21,6 @@ batch_size = 4
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
-        print("Initializing CustomImageDataGenerator")
         self.directory = directory
         self.image_width = image_width
         self.image_height = image_height
@@ -28,7 +29,6 @@ class CustomImageDataGenerator:
         self.image_files = self.collect_image_files()
 
     def collect_image_files(self):
-        print("Collecting image files")
         image_files = {}
 
         for category in os.listdir(self.directory):
@@ -45,7 +45,6 @@ class CustomImageDataGenerator:
         return sum(len(files) for files in self.image_files.values())
 
     def generate_data(self, is_training=True):
-        print("Generating data")
         categories = os.listdir(self.directory)  # List of category folder names
         all_cases = []  # Collect all cases in all categories
 
@@ -60,8 +59,6 @@ class CustomImageDataGenerator:
                     guids.add(guid)
 
             all_cases.extend([(category, guid) for guid in guids])
-
-        print(f"Processing {len(all_cases)} images") 
 
         while True:
             random.shuffle(all_cases)  # Shuffle cases for better training performance
@@ -87,7 +84,6 @@ class CustomImageDataGenerator:
                 # Append the one-hot encoded label based on the category
 
                 if len(batch_images) == self.batch_size:
-                    print(f"Generated batch of size {self.batch_size}")      
                     batch_images = np.array(batch_images)
                     if self.class_mode == 'categorical':
                         # Convert labels to numerical format
@@ -108,7 +104,6 @@ class CustomImageDataGenerator:
 
 
 def f1_score(y_true, y_pred):
-    print("Calculating F1 score")
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
@@ -121,11 +116,7 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout
-
 def model_builder():
-    print("Building model")
     model = Sequential()
     model.add(DepthwiseConv2D((3,3), activation='relu', input_shape=(image_height, image_width, 6)))
     model.add(MaxPooling2D(2, 2))
@@ -145,15 +136,18 @@ def model_builder():
     model.add(Dense(4, activation='softmax'))
     return model
 
+
+
+optimizer = Adam(learning_rate=0.01)
+
 model = model_builder()
 model.summary()
 model.compile(
     loss='categorical_crossentropy', 
-    optimizer='adam', 
+    optimizer=optimizer,  # Use the custom optimizer
     metrics=['accuracy', f1_score]
 )
 
-print("Training model")
 # Fit the model
 model.fit(
     x=train_generator.generate_data(),
@@ -165,5 +159,5 @@ model.fit(
 )
 
 # Save the model
-model.save(f"{model_name}.h5")
+model.save(f"{model_name}.keras")
 
