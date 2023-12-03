@@ -115,9 +115,12 @@ validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'vali
 #train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=20)
 #validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=20)
 
-cluster_resolver = tf.distribute.cluster_resolver.TFConfigClusterResolver()
+strategy = tf.distribute.experimental.ParameterServerStrategy(
+    cluster_resolver=tf.distribute.cluster_resolver.TFConfigClusterResolver(),
+    variable_partitioner=tf.distribute.experimental.partitioners.FixedShardsVariablePartitioner(num_shards=1)
+)
 
-strategy = tf.distribute.MultiWorkerMirroredStrategy(cluster_resolver=cluster_resolver)
+#strategy = tf.distribute.MultiWorkerMirroredStrategy(cluster_resolver=cluster_resolver)
 with strategy.scope():
     def model_builder():
         model = Sequential()
