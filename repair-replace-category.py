@@ -8,6 +8,7 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras import backend as K
 import numpy as np
 from PIL import Image
@@ -152,14 +153,18 @@ model.compile(
     metrics=['accuracy', f1_score]
 )
 
+# Define the early stopping criteria
+early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+
 # Fit the model
 model.fit(
     x=train_generator.generate_data(),
-    epochs=40,
+    epochs=400,
     steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
-    verbose=1
+    verbose=1,
+    callbacks=[early_stopping]
 )
 
 # Save the model
