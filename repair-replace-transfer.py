@@ -157,7 +157,7 @@ x = Flatten()(last_output)
 x = layers.Dense(1024, activation='relu')(x)
 x = layers.Dense(4, activation='softmax')(x)
 model = Model(pre_trained_model.input, x)
-model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.001), metrics=['accuracy'])
 
 
 model.fit_generator(train_generator, epochs=40, validation_data=test_generator, callbacks=[early_stopping, custom_early_stopping])
