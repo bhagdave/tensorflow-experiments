@@ -1,6 +1,8 @@
-import tensorflow as tf
-import json
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+import tensorflow as tf
+import random
+import json
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.optimizers import RMSprop
@@ -9,13 +11,14 @@ import numpy as np
 from PIL import Image
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
-image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images-new'
+image_folder = '/home/dave/Projects/tensorflow-experiments/images-new'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
+batch_size = 4
 
 class CustomImageDataGenerator:
-    def __init__(self, directory, image_width, image_height, batch_size=20, class_mode='categorical'):
+    def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
         print("Initializing CustomImageDataGenerator")
         self.directory = directory
         self.image_width = image_width
@@ -58,7 +61,10 @@ class CustomImageDataGenerator:
 
             all_cases.extend([(category, guid) for guid in guids])
 
+        print(f"Processing {len(all_cases)} images") 
+
         while True:
+            random.shuffle(all_cases)  # Shuffle cases for better training performance
             batch_images = []
             batch_labels = []  # Initialize an empty list for batch labels
 
@@ -81,6 +87,7 @@ class CustomImageDataGenerator:
                 # Append the one-hot encoded label based on the category
 
                 if len(batch_images) == self.batch_size:
+                    print(f"Generated batch of size {self.batch_size}")      
                     batch_images = np.array(batch_images)
                     if self.class_mode == 'categorical':
                         # Convert labels to numerical format
@@ -93,7 +100,10 @@ class CustomImageDataGenerator:
                     # Clear the batch lists
                     batch_images = []
                     batch_labels = []  # Clear the batch labels
-
+            
+            # If there are not enough images left to form a full batch, discard them
+            batch_images = []
+            batch_labels = []
 
 
 
@@ -108,21 +118,24 @@ def f1_score(y_true, y_pred):
     return f1_val
 
 # Initialize the CustomImageDataGenerator for training and validation
-train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=20)
-validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=20)
+train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
+validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout
 
 def model_builder():
     print("Building model")
     model = Sequential()
-    model.add(Conv2D(112, (3,3), activation='relu', input_shape=(image_height, image_width, 3)))
+    model.add(DepthwiseConv2D((3,3), activation='relu', input_shape=(image_height, image_width, 6)))
     model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(192, (3,3), activation='relu') )
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(96, (3,3), activation='relu') )
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(160, (3,3), activation='relu') )
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(96, (3,3), activation='relu') )
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
     model.add(Flatten())
     model.add(Dropout(0.5))
@@ -143,10 +156,11 @@ model.compile(
 print("Training model")
 # Fit the model
 model.fit(
-    train_generator.generate_data(),
-    epochs=4,
+    x=train_generator.generate_data(),
+    epochs=40,
+    steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
-    validation_steps=10,
+    validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1
 )
 
