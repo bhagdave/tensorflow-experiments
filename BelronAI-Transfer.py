@@ -22,6 +22,7 @@ image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
 batch_size = 4
+num_classes = 4
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -141,9 +142,9 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 model.fit(
     x=train_generator.generate_data(),
     epochs=10,
-    steps_per_epoch=len(train_generator.all_cases) // train_generator.batch_size,
+    steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
-    validation_steps=len(validation_generator.all_cases) // validation_generator.batch_size,
+    validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1
 )
 
