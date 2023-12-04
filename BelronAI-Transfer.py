@@ -12,13 +12,13 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import backend as K
 from tensorflow.keras.applications import VGG16
-from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
-image_folder = '/home/dave/Projects/tensorflow-experiments/images-new'
+image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images-new'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
@@ -123,7 +123,7 @@ train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'),
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
 # Load the VGG16 model without the top layers
-base_model = VGG16(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 6))
+base_model = VGG16(weights='imagenet', include_top=False)
 
 input_tensor = Input(shape=(image_height, image_width, 6))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
@@ -135,7 +135,7 @@ x = Dense(1024, activation='relu')(x)
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
-model = Model(input=input_tensor, outputs=predictions)
+model = Model(inputs=input_tensor, outputs=predictions)
 
 # First: train only the top layers (which were randomly initialized)
 for layer in base_model.layers:
