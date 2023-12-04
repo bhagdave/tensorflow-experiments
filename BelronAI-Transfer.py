@@ -123,16 +123,19 @@ train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'),
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
 # Load the VGG16 model without the top layers
-base_model = VGG16(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 3))
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 6))
+
+input_tensor = Input(shape=(image_height, image_width, 6))
+x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
+x = base_model(x)
 
 # Add a new top layer
-x = base_model.output
 x = Flatten()(x)
 x = Dense(1024, activation='relu')(x)
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
-model = Model(inputs=base_model.input, outputs=predictions)
+model = Model(input=input_tensor, outputs=predictions)
 
 # First: train only the top layers (which were randomly initialized)
 for layer in base_model.layers:
