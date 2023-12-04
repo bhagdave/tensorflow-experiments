@@ -136,8 +136,10 @@ def model_builder():
     model.add(MaxPooling2D(2, 2))
     model.add(Flatten())
     model.add(Dropout(0.5))
+    model.add(Dense(1024, activation='relu'))
     model.add(Dense(512, activation='relu'))
     model.add(Dense(256, activation='relu'))
+    model.add(Dense(128, activation='relu'))
     model.add(Dense(4, activation='softmax'))
     return model
 
