@@ -16,7 +16,6 @@ from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
-os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
 image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images-new'
 image_height = 300
@@ -141,7 +140,11 @@ model = Model(inputs=input_tensor, outputs=predictions)
 for layer in base_model.layers:
     layer.trainable = False
 
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy', f1_score])
+
+checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
+# Define the early stopping criteria
+early_stopping = EarlyStopping(monitor='val_loss', patience=10)
 
 model.fit(
     x=train_generator.generate_data(),
@@ -149,7 +152,8 @@ model.fit(
     steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
-    verbose=1
+    verbose=1,
+    callbacks=[early_stopping, checkpoint]
 )
 
 # Save the model
