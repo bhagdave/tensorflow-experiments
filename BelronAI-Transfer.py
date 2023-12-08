@@ -132,7 +132,7 @@ x = base_model(x)
 
 # Add a new top layer with L2 regularisation
 x = Flatten()(x)
-x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
+x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.1))(x)
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
@@ -146,7 +146,9 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+early_stopping_loss = EarlyStopping(monitor='val_loss', patience=3)
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', patience=3)
+early_stopping_f1 = EarlyStopping(monitor='val_f1_score', patience=3)
 
 model.fit(
     x=train_generator.generate_data(),
@@ -155,7 +157,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping, checkpoint]
+    callbacks=[early_stopping_loss, early_stopping_f1, early_stopping_accuracy, checkpoint]
 )
 
 # Save the model
