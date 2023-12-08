@@ -146,9 +146,9 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping_loss = EarlyStopping(monitor='val_loss', patience=3)
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', patience=3)
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score', patience=3)
+early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=2, patience=4, mode='min')
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=2, patience=3, mode='max')
+early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=2, patience=3, mode='max')
 
 model.fit(
     x=train_generator.generate_data(),
@@ -156,7 +156,7 @@ model.fit(
     steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
-    verbose=1,
+    verbose=2,
     callbacks=[early_stopping_loss, early_stopping_f1, early_stopping_accuracy, checkpoint]
 )
 
