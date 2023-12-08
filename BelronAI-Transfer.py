@@ -130,9 +130,13 @@ input_tensor = Input(shape=(image_height, image_width, 6))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
 
+# Add a Dropout layer after VGG16 model
+x = Dropout(0.5)(x)  # 50% dropout
+
 # Add a new top layer with L2 regularisation
 x = Flatten()(x)
 x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.1))(x)
+x = Dropout(0.2)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
