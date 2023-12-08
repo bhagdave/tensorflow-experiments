@@ -16,6 +16,8 @@ from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
+from tensorflow.keras import regularizers
+
 
 image_folder = '/home/dave/Projects/tensorflow/tensorflow-experiments/images-new'
 image_height = 300
@@ -128,9 +130,9 @@ input_tensor = Input(shape=(image_height, image_width, 6))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
 
-# Add a new top layer
+# Add a new top layer with L2 regularisation
 x = Flatten()(x)
-x = Dense(1024, activation='relu')(x)
+x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
