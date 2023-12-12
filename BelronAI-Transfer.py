@@ -19,7 +19,7 @@ from PIL import Image
 from tensorflow.keras import regularizers
 
 
-image_folder = '/home/dave/Projects/tensorflow-experiments/images-new'
+image_folder = './images-new'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
