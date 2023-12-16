@@ -1,6 +1,6 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+#os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import random
 import json
@@ -23,9 +23,9 @@ image_folder = './images-new'
 image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
-batch_size = 4
+batch_size = 8
 num_classes = 4
-learning_rate = 0.001
+learning_rate = 0.0001
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -132,7 +132,7 @@ x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
 
 # Add a Dropout layer after VGG16 model
-#x = Dropout(0.5)(x)  # 50% dropout
+x = Dropout(0.15)(x)  # 50% dropout
 
 # Add a new top layer with L2 regularisation
 x = Flatten()(x)
@@ -155,12 +155,12 @@ model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metr
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 #early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=3, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=3, mode='max')
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=9, mode='max')
+early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=9, mode='max')
 
 model.fit(
     x=train_generator.generate_data(),
-    epochs=12,
+    epochs=40,
     steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
