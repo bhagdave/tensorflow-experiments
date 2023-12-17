@@ -136,7 +136,7 @@ x = Dropout(0.15)(x)  # 50% dropout
 
 # Add a new top layer with L2 regularisation
 x = Flatten()(x)
-x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
+x = Dense(1024, activation='relu', kernel_regularizer=regularizers.l2(0.02))(x)
 x = Dropout(0.1)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
 
