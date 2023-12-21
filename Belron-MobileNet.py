@@ -24,7 +24,7 @@ from tensorflow.keras.layers import GlobalAveragePooling2D, Input
 image_folder = './images-new'
 image_height = 224
 image_width = 224
-model_name = 'repair-replace-cross'
+model_name = 'belron-mobilenet'
 batch_size = 4
 num_classes = 4
 learning_rate = 0.0003
@@ -48,7 +48,11 @@ if gpus:
         print(e)
 
 
-
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * tf.math.exp(-0.1)
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -154,22 +158,17 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-# Load the VGG16 model without the top layers
-#base_model = VGG16(weights='imagenet', include_top=False)
-
 base_model = MobileNet(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 3))
 
 input_tensor = Input(shape=(image_height, image_width, 6))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
 x = GlobalAveragePooling2D()(x)
-#x = base_model(x)dd
 
 # Add a Dropout layer after VGG16 model
 x = Dropout(dropout_rate1)(x)  # 50% dropout
 
 # Add a new top layer with L2 regularisation
-#x = Flatten()(x)
 x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
 #x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
@@ -183,14 +182,14 @@ for layer in base_model.layers:
 
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
-
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
-checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 #early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 model.fit(
     x=train_generator.generate_data(),
@@ -199,7 +198,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint]
+    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, learning_rate_callback]
 )
 
 # Save the model
