@@ -19,18 +19,17 @@ from PIL import Image
 from tensorflow.keras import regularizers
 from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.layers import GlobalAveragePooling2D, Input
-from tensorflow.keras.models import load_model
 
 
 image_folder = './images-new'
 image_height = 224
 image_width = 224
-model_name = 'modilenet'
+model_name = 'repair-replace-cross'
 batch_size = 4
 num_classes = 4
 learning_rate = 0.0003
 dropout_rate1 = 0.15
-dropout_rate2 = 0.15
+dropout_rate2 = 0.1
 regularisation_rate = 0.03
 early_stopping_patience = 40
 num_epochs = 80
@@ -155,9 +154,35 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
+# Load the VGG16 model without the top layers
+#base_model = VGG16(weights='imagenet', include_top=False)
+
+base_model = MobileNet(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 3))
+
+input_tensor = Input(shape=(image_height, image_width, 6))
+x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
+x = base_model(x)
+x = GlobalAveragePooling2D()(x)
+#x = base_model(x)dd
+
+# Add a Dropout layer after VGG16 model
+x = Dropout(dropout_rate1)(x)  # 50% dropout
+
+# Add a new top layer with L2 regularisation
+#x = Flatten()(x)
+x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
+#x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
+predictions = Dense(num_classes, activation='softmax')(x)
+
+# This is the model we will train
+model = Model(inputs=input_tensor, outputs=predictions)
+
+# First: train only the top layers (which were randomly initialized)
+for layer in base_model.layers:
+    layer.trainable = False
+
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
-model = load_model(f"{model_name}.keras", custom_objects={'f1_score': f1_score})
 
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
