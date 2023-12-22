@@ -17,7 +17,7 @@ os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 image_folder = '/home/dave/Projects/tensorflow-experiments/images-new'
 image_height = 300
 image_width = 300
-model_name = 'repair-replace-cross'
+model_name = 'repair-replace-simple'
 batch_size = 4
 
 class CustomImageDataGenerator:
