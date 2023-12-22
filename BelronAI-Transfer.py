@@ -156,6 +156,11 @@ for layer in base_model.layers:
 
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * tf.math.exp(-0.1)
 
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
@@ -164,6 +169,7 @@ checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', 
 #early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 model.fit(
     x=train_generator.generate_data(),
@@ -172,7 +178,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint]
+    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, learning_rate_callback]
 )
 
 # Save the model
