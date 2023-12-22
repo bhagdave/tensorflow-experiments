@@ -17,15 +17,13 @@ from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 from tensorflow.keras import regularizers
-from tensorflow.keras.applications import MobileNet
-from tensorflow.keras.layers import GlobalAveragePooling2D, Input
 
 
 image_folder = './images-new'
-image_height = 224
-image_width = 224
+image_height = 300
+image_width = 300
 model_name = 'repair-replace-cross'
-batch_size = 2
+batch_size = 8
 num_classes = 4
 learning_rate = 0.0002
 dropout_rate1 = 0.15
@@ -33,21 +31,7 @@ dropout_rate2 = 0.1
 regularisation_rate = 0.02
 early_stopping_patience = 12
 num_epochs = 40
-dense_layer_size = 32
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
-
-
+dense_layer_size = 1024
 
 
 class CustomImageDataGenerator:
@@ -91,9 +75,8 @@ class CustomImageDataGenerator:
 
             all_cases.extend([(category, guid) for guid in guids])
 
-        random.shuffle(all_cases)
-
         while True:
+            random.shuffle(all_cases)  # Shuffle cases for better training performance
             batch_images = []
             batch_labels = []  # Initialize an empty list for batch labels
 
@@ -102,13 +85,9 @@ class CustomImageDataGenerator:
                 for image_type in ['close_up', 'damage_area']:
                     image_file = f"{guid}_{image_type}.jpg"
                     image_path = os.path.join(self.directory, category, image_file)
-
-                    try:
-                        image = Image.open(image_path)
-                        image = image.resize((self.image_width, self.image_height))
-                        image = np.array(image) / 255.0  # Normalize the pixel values
-                    except IOError:
-                        continue
+                    image = Image.open(image_path)
+                    image = image.resize((self.image_width, self.image_height))
+                    image = np.array(image) / 255.0  # Normalize the pixel values
                     
                     if combined_image is None:
                         combined_image = image
@@ -133,12 +112,10 @@ class CustomImageDataGenerator:
                     batch_images = []
                     batch_labels = []  # Clear the batch labels
             
-
-            random.shuffle(all_cases)
-
             # If there are not enough images left to form a full batch, discard them
             batch_images = []
             batch_labels = []
+
 
 
 def f1_score(y_true, y_pred):
@@ -155,23 +132,19 @@ train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'),
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
 # Load the VGG16 model without the top layers
-#base_model = VGG16(weights='imagenet', include_top=False)
-
-base_model = MobileNet(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 3))
+base_model = VGG16(weights='imagenet', include_top=False)
 
 input_tensor = Input(shape=(image_height, image_width, 6))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
-x = GlobalAveragePooling2D()(x)
-#x = base_model(x)dd
 
 # Add a Dropout layer after VGG16 model
-#x = Dropout(dropout_rate1)(x)  # 50% dropout
+x = Dropout(dropout_rate1)(x)  # 50% dropout
 
 # Add a new top layer with L2 regularisation
-#x = Flatten()(x)
+x = Flatten()(x)
 x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
-#x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
+x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
@@ -186,7 +159,7 @@ rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
-checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 #early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
