@@ -12,13 +12,25 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import backend as K
 import numpy as np
 from PIL import Image
+from keras_tuner.tuners import RandomSearch
+from keras_tuner import HyperModel
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
-image_folder = '/home/dave/Projects/tensorflow-experiments/images-new'
+image_folder = './images-new'
 image_height = 300
 image_width = 300
-model_name = 'repair-replace-simple'
-batch_size = 4
+model_name = 'belron-simple'
+batch_size = 8
+num_classes = 4
+num_epochs = 10
+
+def scheduler(epoch, lr):
+    if epoch < 5:
+        return lr
+    else:
+        return lr * tf.math.exp(-0.1)
+
+
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -117,58 +129,73 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-def model_builder():
-    model = Sequential()
-    model.add(DepthwiseConv2D((3,3), activation='relu', input_shape=(image_height, image_width, 6)))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(2, 2))
-    model.add(DepthwiseConv2D((3,3), activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(2, 2))
-    model.add(DepthwiseConv2D((3,3), activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(2, 2))
-    model.add(DepthwiseConv2D((3,3), activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(2, 2))
-    model.add(DepthwiseConv2D( (3,3), activation='relu'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(2, 2))
-    model.add(Flatten())
-    model.add(Dropout(0.5))
-    model.add(Dense(1024, activation='relu'))
-    model.add(Dense(512, activation='relu'))
-    model.add(Dense(256, activation='relu'))
-    model.add(Dense(128, activation='relu'))
-    model.add(Dense(4, activation='softmax'))
-    return model
+
+class MyHyperModel(HyperModel):
+    def __init__(self, input_shape, num_classes):
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+
+    def build(self, hp):
+        model = Sequential()
+        model.add(Conv2D(hp.Int('conv_1_units', min_value=32, max_value=256, step=32),(3, 3), activation='relu', input_shape=self.input_shape))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        # ... other layers ...
+        model.add(DepthwiseConv2D((3,3), activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(2, 2))
+        model.add(DepthwiseConv2D((3,3), activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(2, 2))
+        model.add(DepthwiseConv2D((3,3), activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(2, 2))
+        model.add(DepthwiseConv2D( (3,3), activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D(2, 2))
+        model.add(Flatten())
+        dropout_rate = hp.Float('dropout_rate', min_value=0.1, max_value=0.5, step=0.1)
+        model.add(Dropout(dropout_rate))
+        model.add(Dense(hp.Int('dense_1_units', min_value=32, max_value=1024, step=32), activation='relu'))
+        model.add(Dense(hp.Int('dense_2_units', min_value=32, max_value=512, step=32), activation='relu'))
+        model.add(Dense(hp.Int('dense_3_units', min_value=32, max_value=256, step=32), activation='relu'))
+        model.add(Dense(hp.Int('dense_4_units', min_value=32, max_value=128, step=32), activation='relu'))
+        model.add(Dense(self.num_classes, activation='softmax'))
 
 
+        model.compile(
+            optimizer=Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4])),
+            loss='categorical_crossentropy',
+            metrics=['accuracy'],
+        )
+        return model
 
-optimizer = Adam(learning_rate=0.00001)
 
-model = model_builder()
-model.summary()
-model.compile(
-    loss='categorical_crossentropy', 
-    optimizer=optimizer,  # Use the custom optimizer
-    metrics=['accuracy', f1_score]
+hypermodel = MyHyperModel(input_shape=(image_height, image_width, 6), num_classes=num_classes)
+
+tuner = RandomSearch(
+    hypermodel,
+    objective='val_accuracy',
+    max_trials=10,
+    executions_per_trial=5,
+    directory='tuning',
+    project_name='simple_tuning'
 )
-checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+early_stopping = EarlyStopping(monitor='val_accuracy', patience=3)
+learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
-# Fit the model
-model.fit(
-    x=train_generator.generate_data(),
-    epochs=400,
-    steps_per_epoch=train_generator.calculate_num_samples() // train_generator.batch_size,
+
+tuner.search(
+    train_generator.generate_data(),
+    epochs=num_epochs,
     validation_data=validation_generator.generate_data(),
-    validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
-    verbose=1,
-    callbacks=[early_stopping, checkpoint]
+    steps_per_epoch=train_generator.calculate_num_samples() // batch_size,
+    validation_steps=validation_generator.calculate_num_samples() // batch_size,
+    callbacks=[checkpoint, early_stopping, learning_rate_callback]
 )
 
+best_model = tuner.get_best_models(num_models=1)[0]
 # Save the model
-model.save(f"{model_name}.keras")
+best_model.save(f"{model_name}.keras")
 
