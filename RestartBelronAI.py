@@ -14,6 +14,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
+from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image
 from tensorflow.keras import regularizers
@@ -22,15 +23,15 @@ from tensorflow.keras import regularizers
 image_folder = './images-new'
 image_height = 300
 image_width = 300
-model_name = 'repair-replace-cross'
+model_name = 'previous_model'
 batch_size = 8
 num_classes = 4
 learning_rate = 0.0002
 dropout_rate1 = 0.15
 dropout_rate2 = 0.1
 regularisation_rate = 0.02
-early_stopping_patience = 12
-num_epochs = 40
+early_stopping_patience = 22
+num_epochs = 80
 dense_layer_size = 1024
 
 
@@ -131,39 +132,16 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-# Load the VGG16 model without the top layers
-base_model = VGG16(weights='imagenet', include_top=False)
-
-input_tensor = Input(shape=(image_height, image_width, 6))
-x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
-x = base_model(x)
-
-# Add a Dropout layer after VGG16 model
-x = Dropout(dropout_rate1)(x)  # 50% dropout
-
-# Add a new top layer with L2 regularisation
-x = Flatten()(x)
-x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
-x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
-predictions = Dense(num_classes, activation='softmax')(x)
-
-# This is the model we will train
-model = Model(inputs=input_tensor, outputs=predictions)
-
-# First: train only the top layers (which were randomly initialized)
-for layer in base_model.layers:
-    layer.trainable = False
-
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
-
-model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
-
-checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 #early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+
+model = load_model(f"{model_name}.keras", custom_objects={'f1_score': f1_score})
+model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 model.fit(
     x=train_generator.generate_data(),
