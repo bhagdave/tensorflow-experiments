@@ -30,17 +30,15 @@ dense_2_units = 384
 dense_3_units = 192
 dense_4_units = 96
 early_stopping = 3
+steps_per_epoch = 100
 learning_rate = 0.0001
-
-
+validation_steps = 50
 
 def scheduler(epoch, lr):
     if epoch < 5:
         return lr
     else:
         return lr * tf.math.exp(-0.1)
-
-
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -139,47 +137,40 @@ def f1_score(y_true, y_pred):
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-
-class MyModel():
-    def __init__(self, input_shape, num_classes):
-        self.input_shape = input_shape
-        self.num_classes = num_classes
-
-    def build(self):
-        model = Sequential()
-        model.add(Conv2D(conv_1_units,(3, 3), activation='relu', input_shape=self.input_shape))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
+def model_builder():
+    print("Building model")
         # ... other layers ...
-        model.add(DepthwiseConv2D((3,3), activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(2, 2))
-        model.add(DepthwiseConv2D((3,3), activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(2, 2))
-        model.add(DepthwiseConv2D((3,3), activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(2, 2))
-        model.add(DepthwiseConv2D( (3,3), activation='relu'))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D(2, 2))
-        model.add(Flatten())
-        model.add(Dropout(dropout_rate))
-        model.add(Dense(dense_1_units, activation='relu'))
-        model.add(Dense(dense_2_units, activation='relu'))
-        model.add(Dense(dense_3_units, activation='relu'))
-        model.add(Dense(dense_4_units, activation='relu'))
-        model.add(Dense(self.num_classes, activation='softmax'))
+    model = Sequential()
+    model.add(Conv2D(conv_1_units, (3,3), activation='relu', input_shape=(image_height, image_width, 6)))
+    model.add(MaxPooling2D(2, 2))
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(2, 2))
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(2, 2))
+    model.add(DepthwiseConv2D((3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(2, 2))
+    model.add(DepthwiseConv2D( (3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(2, 2))
+    model.add(Flatten())
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(dense_1_units, activation='relu'))
+    model.add(Dense(dense_2_units, activation='relu'))
+    model.add(Dense(dense_3_units, activation='relu'))
+    model.add(Dense(dense_4_units, activation='relu'))
+    model.add(Dense(num_classes, activation='softmax'))
+    return model
 
-
-        model.compile(
-            optimizer=Adam(learning_rate),
-            loss='categorical_crossentropy',
-            metrics=['accuracy'],
-        )
-        return model
-
-
-model = MyModel(input_shape=(image_height, image_width, 6), num_classes=num_classes)
+model = model_builder()
+model.summary()
+model.compile(
+    loss='categorical_crossentropy', 
+    optimizer='adam', 
+    metrics=['accuracy', f1_score]
+)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
@@ -188,5 +179,17 @@ learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 model.fit_generator(train_generator, num_epochs=40, validation_data=test_generator, callbacks=[early_stopping, learning_rate_callback])
 
+print("Training model")
+# Fit the model
+#model.fit(
+#    train_generator.generate_data(),
+#    epochs=num_epochs,
+#    steps_per_epoch=steps_per_epoch,
+#    validation_data=validation_generator.generate_data(),
+#    validation_steps=validation_steps,
+#    verbose=1
+#)
+
 # Save the model
 model.save(f"{model_name}.h5")
+
