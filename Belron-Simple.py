@@ -12,8 +12,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import backend as K
 import numpy as np
 from PIL import Image
-from keras_tuner.tuners import RandomSearch
-from keras_tuner import HyperModel
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
 image_folder = './images-new'
@@ -177,18 +175,18 @@ checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', 
 early_stopping = EarlyStopping(monitor='val_accuracy', patience=3)
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
-model.fit_generator(train_generator, num_epochs=40, validation_data=test_generator, callbacks=[early_stopping, learning_rate_callback])
+# model.fit_generator(train_generator, epochs=num_epochs, validation_data=validation_generator, callbacks=[early_stopping, learning_rate_callback])
 
 print("Training model")
 # Fit the model
-#model.fit(
-#    train_generator.generate_data(),
-#    epochs=num_epochs,
-#    steps_per_epoch=steps_per_epoch,
-#    validation_data=validation_generator.generate_data(),
-#    validation_steps=validation_steps,
-#    verbose=1
-#)
+model.fit(
+    train_generator.generate_data(),
+    epochs=num_epochs,
+    steps_per_epoch=steps_per_epoch,
+    validation_data=validation_generator.generate_data(),
+    validation_steps=validation_steps,
+    verbose=1
+)
 
 # Save the model
 model.save(f"{model_name}.h5")
