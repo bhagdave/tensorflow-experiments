@@ -3,6 +3,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import random
 import json
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
@@ -20,17 +21,17 @@ image_width = 300
 model_name = 'belron-simple'
 batch_size = 8
 num_classes = 4
-num_epochs = 10
-conv_1_units = 160
-dropout_rate = 0.2
-dense_1_units = 160 
+num_epochs = 200
+conv_1_units = 224
+dropout_rate = 0.6
+dense_1_units = 192 
 dense_2_units = 384
 dense_3_units = 192
-dense_4_units = 96
-early_stopping = 3
+dense_4_units = 128
+early_stopping = 13
 steps_per_epoch = 100
 learning_rate = 0.0001
-validation_steps = 50
+validation_steps = 100
 
 def scheduler(epoch, lr):
     if epoch < 5:
@@ -66,6 +67,15 @@ class CustomImageDataGenerator:
     def generate_data(self, is_training=True):
         categories = os.listdir(self.directory)  # List of category folder names
         all_cases = []  # Collect all cases in all categories
+        if is_training:  # Only augment training data
+            datagen = ImageDataGenerator(
+                rotation_range=20,
+                width_shift_range=0.2,
+                height_shift_range=0.2,
+                zoom_range=0.2,
+                horizontal_flip=True,
+                fill_mode='nearest'
+            )
 
         for category in categories:
             category_path = os.path.join(self.directory, category)
@@ -98,9 +108,17 @@ class CustomImageDataGenerator:
                     else:
                         combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
 
+                    if is_training:
+                        # Convert image to array and apply data augmentation
+                        image = img_to_array(combined_image)  # Convert the image to an array
+                        image = datagen.random_transform(image)  # Apply transformations
+                        image = array_to_img(image)  # Convert back to image
+
+                    combined_image = np.array(image) / 255.0
+
+
                 batch_labels.append(category)
                 batch_images.append(combined_image)
-                # Append the one-hot encoded label based on the category
 
                 if len(batch_images) == self.batch_size:
                     batch_images = np.array(batch_images)
@@ -185,9 +203,10 @@ model.fit(
     steps_per_epoch=steps_per_epoch,
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_steps,
-    verbose=1
+    verbose=1,
+    callbacks=[early_stopping, learning_rate_callback, checkpoint],
 )
 
 # Save the model
-model.save(f"{model_name}.h5")
+model.save(f"{model_name}.keras")
 
