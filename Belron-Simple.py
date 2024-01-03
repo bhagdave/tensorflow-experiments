@@ -21,11 +21,11 @@ image_width = 300
 model_name = 'belron-simple'
 batch_size = 8
 num_classes = 4
-num_epochs = 200
-conv_1_units = 224
-dropout_rate = 0.6
+num_epochs = 100
+conv_1_units = 160
+dropout_rate = 0.5
 dense_1_units = 192 
-dense_2_units = 384
+dense_2_units = 192
 dense_3_units = 192
 dense_4_units = 128
 early_stopping = 13
@@ -101,21 +101,17 @@ class CustomImageDataGenerator:
                     image_path = os.path.join(self.directory, category, image_file)
                     image = Image.open(image_path)
                     image = image.resize((self.image_width, self.image_height))
-                    image = np.array(image) / 255.0  # Normalize the pixel values
+                    image_array = np.array(image) / 255.0
+
+                    if image_type is 'close_up' and is_training:
+                        image_array = datagen.random_transform(image_array)  # Apply transformations
                     
                     if combined_image is None:
-                        combined_image = image
+                        combined_image = image_array
                     else:
                         combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
 
-                    if is_training:
-                        # Convert image to array and apply data augmentation
-                        image = img_to_array(combined_image)  # Convert the image to an array
-                        image = datagen.random_transform(image)  # Apply transformations
-                        image = array_to_img(image)  # Convert back to image
-
-                    combined_image = np.array(image) / 255.0
-
+                print(combined_image.shape)
 
                 batch_labels.append(category)
                 batch_images.append(combined_image)
