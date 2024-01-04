@@ -22,20 +22,24 @@ model_name = 'belron-simple'
 batch_size = 8
 num_classes = 4
 num_epochs = 100
-conv_1_units = 160
-dropout_rate = 0.5
+conv_1_units = 224
+dropout_rate = 0.6
 dense_1_units = 192 
-dense_2_units = 192
+dense_2_units = 384 
 dense_3_units = 192
 dense_4_units = 128
-early_stopping = 13
+early_stopping = 33
 steps_per_epoch = 100
-learning_rate = 0.0001
+learning_rate = 0.001
 validation_steps = 100
 
 def scheduler(epoch, lr):
-    if epoch < 5:
-        return lr
+    if epoch < 50:
+        return learning_rate
+    elif epoch < 75:
+        return learning_rate * 0.1
+    elif epoch < 100:
+        return learning_rate * 0.01
     else:
         return lr * tf.math.exp(-0.1)
 
@@ -133,6 +137,25 @@ class CustomImageDataGenerator:
             batch_labels = []
 
 
+class CustomEarlyStopping(tf.keras.callbacks.Callback):
+    def __init__(self, condition, verbose=0):
+        super(CustomEarlyStopping, self).__init__()
+        self.condition = condition
+        self.verbose = verbose
+
+    def on_epoch_end(self, epoch, logs=None):
+        if self.condition(logs):
+            self.model.stop_training = True
+            if self.verbose > 0:
+                print(f"Custom early stopping triggered at epoch {epoch + 1}.")
+
+# Define your custom condition function
+def custom_condition(logs):
+    # You can define your condition based on loss, accuracy, or any other metric
+    return logs.get('val_loss') < 0.2  # Example: Stop if loss is less than 0.2
+
+# Create the custom callback
+custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
 
 def f1_score(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -184,7 +207,7 @@ model.compile(
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping = EarlyStopping(monitor='val_accuracy', patience=3)
+early_stopping = EarlyStopping(monitor='val_accuracy', patience=early_stopping, verbose=1, mode='auto', restore_best_weights=True)
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 # model.fit_generator(train_generator, epochs=num_epochs, validation_data=validation_generator, callbacks=[early_stopping, learning_rate_callback])
@@ -198,7 +221,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_steps,
     verbose=1,
-    callbacks=[early_stopping, learning_rate_callback, checkpoint],
+    callbacks=[early_stopping, learning_rate_callback, checkpoint, custom_early_stopping],
 )
 
 # Save the model
