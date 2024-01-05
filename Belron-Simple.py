@@ -21,27 +21,27 @@ image_width = 300
 model_name = 'belron-simple'
 batch_size = 8
 num_classes = 4
-num_epochs = 100
-conv_1_units = 224
-dropout_rate = 0.6
-dense_1_units = 192 
-dense_2_units = 384 
+num_epochs = 500
+conv_1_units = 160
+dropout_rate = 0.5
+dense_1_units = 160 
+dense_2_units = 192 
 dense_3_units = 192
-dense_4_units = 128
+dense_4_units = 96
 early_stopping = 33
 steps_per_epoch = 100
-learning_rate = 0.001
+learning_rate = 0.0001
 validation_steps = 100
 
 def scheduler(epoch, lr):
     if epoch < 50:
         return learning_rate
     elif epoch < 75:
-        return learning_rate * 0.1
+        return learning_rate
     elif epoch < 100:
-        return learning_rate * 0.01
+        return learning_rate
     else:
-        return lr * tf.math.exp(-0.1)
+        return learning_rate
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -107,7 +107,7 @@ class CustomImageDataGenerator:
                     image = image.resize((self.image_width, self.image_height))
                     image_array = np.array(image) / 255.0
 
-                    if image_type is 'close_up' and is_training:
+                    if image_type == 'close_up' and is_training:
                         image_array = datagen.random_transform(image_array)  # Apply transformations
                     
                     if combined_image is None:
@@ -221,7 +221,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_steps,
     verbose=1,
-    callbacks=[early_stopping, learning_rate_callback, checkpoint, custom_early_stopping],
+    callbacks=[learning_rate_callback, checkpoint, custom_early_stopping],
 )
 
 # Save the model
