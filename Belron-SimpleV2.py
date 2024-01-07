@@ -6,7 +6,7 @@ import json
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D
+from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D, SeparableConv2D
 from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -40,14 +40,14 @@ tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 
 def scheduler(epoch, lr):
-    if epoch < 60:
+    if epoch < 16:
         return learning_rate
-    elif epoch < 120:
+    elif epoch < 76:
         return learning_rate * 0.1
     elif epoch < 200:
-        return learning_rate * 0.1
+        return learning_rate * 0.01
     else:
-        return learning_rate * 0.1
+        return learning_rate * 0.001
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size=batch_size, class_mode='categorical'):
@@ -180,7 +180,7 @@ def model_builder():
     print("Building model")
     model = Sequential()
 
-    model.add(Conv2D(conv_1_units, (3,3), activation='relu', input_shape=(image_height, image_width, 6)))
+    model.add(SeparableConv2D(conv_1_units, (3, 3), activation='relu', input_shape=(image_height, image_width, 6)))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
 
