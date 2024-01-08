@@ -20,7 +20,7 @@ image_height = 300
 image_width = 300
 model_name = 'belron-simple'
 batch_size = 8
-num_classes = 4
+num_classes = 2
 num_epochs = 500
 conv_1_units = 160
 dropout_rate = 0.5
@@ -152,7 +152,7 @@ class CustomEarlyStopping(tf.keras.callbacks.Callback):
 # Define your custom condition function
 def custom_condition(logs):
     # You can define your condition based on loss, accuracy, or any other metric
-    return logs.get('val_loss') < 0.2  # Example: Stop if loss is less than 0.2
+    return logs.get('val_loss') < 0.1  # Example: Stop if loss is less than 0.2
 
 # Create the custom callback
 custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
