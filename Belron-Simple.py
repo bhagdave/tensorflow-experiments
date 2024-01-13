@@ -152,7 +152,7 @@ class CustomEarlyStopping(tf.keras.callbacks.Callback):
 # Define your custom condition function
 def custom_condition(logs):
     # You can define your condition based on loss, accuracy, or any other metric
-    return logs.get('val_loss') < 0.1  # Example: Stop if loss is less than 0.2
+    return logs.get('val_loss') < 0.05  # Example: Stop if loss is less than 0.2
 
 # Create the custom callback
 custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
