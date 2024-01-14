@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
-image_folder = './images-new'
+image_folder = './images-for-prediction'
 image_height = 300
 image_width = 300
 model_name = 'belron-simple'
@@ -23,7 +23,7 @@ batch_size = 8
 num_classes = 2
 num_epochs = 500
 conv_1_units = 160
-dropout_rate = 0.5
+dropout_rate = 0.2
 dense_1_units = 160 
 dense_2_units = 192 
 dense_3_units = 192
@@ -31,7 +31,7 @@ dense_4_units = 96
 early_stopping = 33
 steps_per_epoch = 100
 learning_rate = 0.0001
-validation_steps = 100
+validation_steps = 20
 
 def scheduler(epoch, lr):
     if epoch < 50:
@@ -113,7 +113,7 @@ class CustomImageDataGenerator:
                     if combined_image is None:
                         combined_image = image_array
                     else:
-                        combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
+                        combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
 
                 batch_labels.append(category)
                 batch_images.append(combined_image)
@@ -189,11 +189,14 @@ def model_builder():
     model.add(BatchNormalization())
     model.add(MaxPooling2D(2, 2))
     model.add(Flatten())
-    model.add(Dropout(dropout_rate))
     model.add(Dense(dense_1_units, activation='relu'))
+    model.add(Dropout(dropout_rate))
     model.add(Dense(dense_2_units, activation='relu'))
+    model.add(Dropout(dropout_rate))
     model.add(Dense(dense_3_units, activation='relu'))
+    model.add(Dropout(dropout_rate))
     model.add(Dense(dense_4_units, activation='relu'))
+    model.add(Dropout(dropout_rate))
     model.add(Dense(num_classes, activation='softmax'))
     return model
 
