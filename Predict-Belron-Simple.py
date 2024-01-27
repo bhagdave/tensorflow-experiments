@@ -2,6 +2,7 @@ from tensorflow.keras.models import load_model
 from PIL import Image
 import numpy as np
 import os
+import csv
 
 
 
@@ -40,6 +41,7 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
     while True:
         batch_images = []
         batch_filenames = []
+        batch_categories = []
 
         for _ in range(batch_size):
             if len(all_cases) == 0:
@@ -61,26 +63,33 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
             batch_images.append(combined_image)
             batch_filenames.append(image_file)
+            batch_categories.append(category)
 
         if len(batch_images) == 0:
             break
 
-        yield np.array(batch_images), batch_filenames  # Convert the list of images to a NumPy array
+        yield np.array(batch_images), batch_filenames, batch_categories  # Convert the list of images to a NumPy array
 
 
 prediction_generator = generate_data_for_prediction(
-    directory='./images-for-prediction/train',  # Path to the folder with images for prediction
+    directory='./images-for-prediction/validate',  # Path to the folder with images for prediction
     image_width=300,
     image_height=300,
     batch_size=8
 )
 
-# Use the generator to get predictions
-for batch in prediction_generator:
-    predictions = model.predict(batch)
-    # Process predictions
-    print("Predictions:", predictions)
-    predicted_index = np.argmax(predictions, axis=1)
-    print("Predicted Index:", predicted_index)
-    predicted_category = [categories[i] for i in predicted_index]
-    print("Predicted Category:", predicted_category)
+with open('predictions.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['Filename', 'Human Category', 'Predicted Category', 'Confidence'])
+
+    # Use the generator to get predictions
+    for batch, filenames, human_categories in prediction_generator:
+        predictions = model.predict(batch)
+        # Process predictions
+        predicted_index = np.argmax(predictions, axis=1)
+        predicted_category = [categories[i] for i in predicted_index]
+        confidence_scores = np.max(predictions, axis=1)
+
+        for filename, human_category, category, score in zip(filenames, human_categories, predicted_category, confidence_scores):
+            print(f"Filename: {filename}, Human Assigned Category: {human_category}, Predicted Category: {category}, Confidence Score: {score}")
+            writer.writerow([filename, human_category, category, score])
