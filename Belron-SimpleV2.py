@@ -20,9 +20,9 @@ os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 image_folder = './images-new'
 image_height = 300
 image_width = 300
-model_name = 'belron-simple'
+model_name = 'belron-simplev2'
 batch_size = 8
-num_classes = 4
+num_classes = 2
 num_epochs = 500
 conv_1_units = 32
 conv_2_units = 64
@@ -119,7 +119,7 @@ class CustomImageDataGenerator:
                     if combined_image is None:
                         combined_image = image_array
                     else:
-                        combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
+                        combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
 
                 batch_labels.append(category)
                 batch_images.append(combined_image)
