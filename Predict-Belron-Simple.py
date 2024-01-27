@@ -39,6 +39,8 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
     while True:
         batch_images = []
+        batch_filenames = []
+
         for _ in range(batch_size):
             if len(all_cases) == 0:
                 break  # Break if no more images to process
@@ -58,11 +60,12 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
                     combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
 
             batch_images.append(combined_image)
+            batch_filenames.append(image_file)
 
         if len(batch_images) == 0:
             break
 
-        yield np.array(batch_images)  # Convert the list of images to a NumPy array
+        yield np.array(batch_images), batch_filenames  # Convert the list of images to a NumPy array
 
 
 prediction_generator = generate_data_for_prediction(
