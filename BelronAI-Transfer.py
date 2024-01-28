@@ -4,6 +4,7 @@ import os
 import tensorflow as tf
 import random
 import json
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
@@ -24,7 +25,7 @@ image_height = 300
 image_width = 300
 model_name = 'repair-replace-cross'
 batch_size = 8
-num_classes = 4
+num_classes = 2
 learning_rate = 0.0002
 dropout_rate1 = 0.15
 dropout_rate2 = 0.1
@@ -63,6 +64,18 @@ class CustomImageDataGenerator:
         categories = os.listdir(self.directory)  # List of category folder names
         all_cases = []  # Collect all cases in all categories
 
+        if is_training:  # Only augment training data
+            datagen = ImageDataGenerator(
+                rotation_range=20,
+                width_shift_range=0.2,
+                height_shift_range=0.2,
+                zoom_range=0.2,
+                horizontal_flip=True,
+                fill_mode='nearest'
+            )
+
+
+
         for category in categories:
             category_path = os.path.join(self.directory, category)
             image_files = os.listdir(category_path)
@@ -87,10 +100,13 @@ class CustomImageDataGenerator:
                     image_path = os.path.join(self.directory, category, image_file)
                     image = Image.open(image_path)
                     image = image.resize((self.image_width, self.image_height))
-                    image = np.array(image) / 255.0  # Normalize the pixel values
+                    image_array = np.array(image) / 255.0  # Normalize the pixel values
+
+                    if image_type == 'close_up' and is_training:
+                        image_array = datagen.random_transform(image_array)  # Apply transformations
                     
                     if combined_image is None:
-                        combined_image = image
+                        combined_image = image_array
                     else:
                         combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
 
@@ -157,7 +173,7 @@ for layer in base_model.layers:
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 20:
         return lr
     else:
         return lr * tf.math.exp(-0.1)
@@ -166,9 +182,9 @@ model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metr
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-#early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
+#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 model.fit(
@@ -178,7 +194,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, learning_rate_callback]
+    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback]
 )
 
 # Save the model
