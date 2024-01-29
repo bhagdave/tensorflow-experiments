@@ -3,7 +3,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import random
 import json
-from SharedClasses import CustomEarlyStopping, CustomImageDataGenerator
+from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerator
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout

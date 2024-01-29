@@ -3,19 +3,9 @@ from PIL import Image
 import numpy as np
 import os
 import csv
+from SharedClasses import f1_score
 
-
-
-def f1_score(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    recall = true_positives / (possible_positives + K.epsilon())
-    f1_val = 2 * (precision * recall) / (precision + recall + K.epsilon())
-    return f1_val
-
-model_name = "belron-simple"
+model_name = "repair-replace-cross"
 categories = ['repair', 'replace']
 image_width = 300
 image_height = 300
@@ -72,7 +62,7 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
 
 prediction_generator = generate_data_for_prediction(
-    directory='./images-for-prediction/validate',  # Path to the folder with images for prediction
+    directory='./images-unseen',  # Path to the folder with images for prediction
     image_width=300,
     image_height=300,
     batch_size=8
