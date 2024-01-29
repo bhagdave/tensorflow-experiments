@@ -108,7 +108,7 @@ class CustomImageDataGenerator:
                     if combined_image is None:
                         combined_image = image_array
                     else:
-                        combined_image = np.concatenate((combined_image, image), axis=-1)  # Combine along the channel axis
+                        combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
 
                 batch_labels.append(category)
                 batch_images.append(combined_image)
