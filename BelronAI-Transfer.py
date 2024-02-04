@@ -19,6 +19,7 @@ from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 from tensorflow.keras import regularizers
+from tensorflow.keras.initializers import HeUniform
 
 
 image_folder = './images-new'
@@ -28,11 +29,11 @@ model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.0002
-dropout_rate1 = 0.15
-dropout_rate2 = 0.1
-regularisation_rate = 0.02
-early_stopping_patience = 12
-num_epochs = 40
+dropout_rate1 = 0.5
+dropout_rate2 = 0.5
+regularisation_rate = 0.002
+early_stopping_patience = 2
+num_epochs = 10
 dense_layer_size = 1024
 
 
@@ -40,12 +41,13 @@ dense_layer_size = 1024
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-# Load the VGG16 model without the top layers
-base_model = VGG16(weights='imagenet', include_top=False)
 
 input_tensor = Input(shape=(image_height, image_width, 6))
-x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
-x = base_model(x)
+# Load the VGG16 model without the top layers
+base_model = VGG16(weights=None, include_top=False, input_tensor=input_tensor)
+#x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
+#x = Conv2D(3, (1, 1), padding='same', kernel_initializer=HeUniform())(input_tensor)
+x = base_model.output
 
 # Add a Dropout layer after VGG16 model
 x = Dropout(dropout_rate1)(x)  # 50% dropout
@@ -57,7 +59,7 @@ x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
-model = Model(inputs=input_tensor, outputs=predictions)
+model = Model(inputs=base_model.input, outputs=predictions)
 
 # First: train only the top layers (which were randomly initialized)
 for layer in base_model.layers:
@@ -79,7 +81,7 @@ early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=
 #early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 #early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
-
+model.summary()
 model.fit(
     x=train_generator.generate_data(),
     epochs=num_epochs,
