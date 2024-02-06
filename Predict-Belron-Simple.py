@@ -7,8 +7,8 @@ from SharedClasses import f1_score
 
 model_name = "repair-replace-cross"
 categories = ['repair', 'replace']
-image_width = 300
-image_height = 300
+image_width = 224
+image_height = 224
 # Load the saved model
 model = load_model(f"./models/{model_name}.keras", custom_objects={'f1_score': f1_score})
 
@@ -39,19 +39,13 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
             category, guid = all_cases.pop(0)
             combined_image = None
-            for image_type in ['close_up', 'damage_area']:
-                image_file = f"{guid}_{image_type}.jpg"
-                image_path = os.path.join(directory, category, image_file)
-                image = Image.open(image_path)
-                image = image.resize((image_width, image_height))
-                image_array = np.array(image) / 255.0
+            image_file = f"{guid}_close_up.jpg"
+            image_path = os.path.join(directory, category, image_file)
+            image = Image.open(image_path)
+            image = image.resize((image_width, image_height))
+            image_array = np.array(image) / 255.0
 
-                if combined_image is None:
-                    combined_image = image_array
-                else:
-                    combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
-
-            batch_images.append(combined_image)
+            batch_images.append(image_array)
             batch_filenames.append(image_file)
             batch_categories.append(category)
 
@@ -63,8 +57,8 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
 prediction_generator = generate_data_for_prediction(
     directory='./images-unseen',  # Path to the folder with images for prediction
-    image_width=300,
-    image_height=300,
+    image_width=image_width,
+    image_height=image_height,
     batch_size=8
 )
 

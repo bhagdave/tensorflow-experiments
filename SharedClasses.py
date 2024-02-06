@@ -64,24 +64,17 @@ class CustomImageDataGenerator:
             batch_labels = []  # Initialize an empty list for batch labels
 
             for (category, guid) in all_cases:
-                combined_image= None
-                for image_type in ['close_up', 'damage_area']:
-                    image_file = f"{guid}_{image_type}.jpg"
-                    image_path = os.path.join(self.directory, category, image_file)
-                    image = Image.open(image_path)
-                    image = image.resize((self.image_width, self.image_height))
-                    image_array = np.array(image) / 255.0
 
-                    if image_type == 'close_up' and is_training:
-                        image_array = datagen.random_transform(image_array)  # Apply transformations
-                    
-                    if combined_image is None:
-                        combined_image = image_array
-                    else:
-                        combined_image = np.concatenate((combined_image, image_array), axis=-1)  # Combine along the channel axis
-
+                image_file = f"{guid}_close_up.jpg"
+                image_path = os.path.join(self.directory, category, image_file)
+                image = Image.open(image_path)
+                image = image.resize((self.image_width, self.image_height))
+                image_array = np.array(image) / 255.0
+                if is_training:
+                    image_array = datagen.random_transform(image_array)  # Apply transformations
+                   
                 batch_labels.append(category)
-                batch_images.append(combined_image)
+                batch_images.append(image_array)
 
                 if len(batch_images) == self.batch_size:
                     batch_images = np.array(batch_images)

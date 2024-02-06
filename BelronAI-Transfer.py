@@ -22,54 +22,51 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.initializers import HeUniform
 
 
-image_folder = './images-new'
-image_height = 300
-image_width = 300
+image_folder = './images-new/close_up'
+image_height = 224
+image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0002
-dropout_rate1 = 0.5
-dropout_rate2 = 0.5
-regularisation_rate = 0.002
-early_stopping_patience = 2
-num_epochs = 10
-dense_layer_size = 1024
+learning_rate = 0.001
+dropout_rate1 = 0.1
+dropout_rate2 = 0.4
+regularisation_rate = 0.0002
+early_stopping_patience = 10
+num_epochs = 100
+dense_layer_size = 512
 
 
 # Initialize the CustomImageDataGenerator for training and validation
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-
-input_tensor = Input(shape=(image_height, image_width, 6))
-# Load the VGG16 model without the top layers
-base_model = VGG16(weights=None, include_top=False, input_tensor=input_tensor)
-#x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
-#x = Conv2D(3, (1, 1), padding='same', kernel_initializer=HeUniform())(input_tensor)
-x = base_model.output
-
-# Add a Dropout layer after VGG16 model
-x = Dropout(dropout_rate1)(x)  # 50% dropout
-
-# Add a new top layer with L2 regularisation
-x = Flatten()(x)
-x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
-x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
-predictions = Dense(num_classes, activation='softmax')(x)
-
-# This is the model we will train
-model = Model(inputs=base_model.input, outputs=predictions)
+base_model = VGG16(weights="imagenet", include_top=False, input_shape=(image_height, image_width, 3))
 
 # First: train only the top layers (which were randomly initialized)
 for layer in base_model.layers:
     layer.trainable = False
+
+# Create the model
+input_tensor = Input(shape=(image_height, image_width, 3))
+x = base_model(input_tensor)
+x = Flatten()(x)  # Flatten the output
+x = Dropout(dropout_rate1)(x)  # Apply dropout
+x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
+x = Dropout(dropout_rate2)(x)  # Apply dropout again
+predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
+
+model = Model(inputs=input_tensor, outputs=predictions)
 
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
     if epoch < 20:
         return lr
+    elif epoch < 40:
+        return lr * .1
+    elif epoch < 60:
+        return lr * .7
     else:
         return lr * tf.math.exp(-0.1)
 
@@ -77,9 +74,9 @@ model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metr
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
-#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-#early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.summary()
 model.fit(
@@ -89,7 +86,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback]
+    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
 )
 
 # Save the model
