@@ -56,7 +56,7 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
 
 prediction_generator = generate_data_for_prediction(
-    directory='./images-unseen',  # Path to the folder with images for prediction
+    directory='./images-unseen/close_up',  # Path to the folder with images for prediction
     image_width=image_width,
     image_height=image_height,
     batch_size=8
