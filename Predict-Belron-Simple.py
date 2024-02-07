@@ -54,6 +54,8 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
 
         yield np.array(batch_images), batch_filenames, batch_categories  # Convert the list of images to a NumPy array
 
+correct = 0
+total = 0
 
 prediction_generator = generate_data_for_prediction(
     directory='./images-unseen/close_up',  # Path to the folder with images for prediction
@@ -75,5 +77,11 @@ with open('predictions.csv', 'w', newline='') as csvfile:
         confidence_scores = np.max(predictions, axis=1)
 
         for filename, human_category, category, score in zip(filenames, human_categories, predicted_category, confidence_scores):
-            print(f"Filename: {filename}, Human Assigned Category: {human_category}, Predicted Category: {category}, Confidence Score: {score}")
+            #print(f"Filename: {filename}, Human Assigned Category: {human_category}, Predicted Category: {category}, Confidence Score: {score}")
             writer.writerow([filename, human_category, category, score])
+            total += 1
+            if human_category == category:
+                correct += 1
+            
+percentage = correct / total * 100
+print(f"Correct: {correct}, Total: {total}, Percentage: {percentage:.2f}%")
