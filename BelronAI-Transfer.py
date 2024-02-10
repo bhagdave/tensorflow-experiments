@@ -28,12 +28,12 @@ image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0002
+learning_rate = 0.0003
 dropout_rate1 = 0.2
 dropout_rate2 = 0.5
 regularisation_rate = 0.0002
-early_stopping_patience = 40
-num_epochs = 120
+early_stopping_patience = 10
+num_epochs = 100
 dense_layer_size = 1024
 
 
@@ -52,11 +52,11 @@ for layer in base_model.layers:
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
 x = Flatten()(x)  # Flatten the output
-x = BatchNormalization()(x) 
-x = Dropout(dropout_rate1)(x)  # Apply dropout
+#x = BatchNormalization()(x) 
+#x = Dropout(dropout_rate1)(x)  # Apply dropout
 #x = BatchNormalization()(x)
-x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
-x = Dropout(dropout_rate2)(x)  # Apply dropout again
+#x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
+#x = Dropout(dropout_rate2)(x)  # Apply dropout again
 predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
 
 model = Model(inputs=input_tensor, outputs=predictions)
@@ -64,11 +64,11 @@ model = Model(inputs=input_tensor, outputs=predictions)
 rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 20:
+    if epoch < 10:
         return learning_rate
-    elif epoch < 40:
+    elif epoch < 25:
         return learning_rate * .7
-    elif epoch < 60:
+    elif epoch < 50:
         return learning_rate * .1
     else:
         return learning_rate * .05
