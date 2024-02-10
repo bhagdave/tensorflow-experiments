@@ -32,8 +32,8 @@ learning_rate = 0.001
 dropout_rate1 = 0.3
 dropout_rate2 = 0.5
 regularisation_rate = 0.0002
-early_stopping_patience = 60
-num_epochs = 300
+early_stopping_patience = 6
+num_epochs = 30
 dense_layer_size = 1024
 
 
@@ -50,14 +50,12 @@ for layer in base_model.layers:
 # Create the model
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
-residual = x
 x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 x = BatchNormalization()(x)  # Batch normalization before activation
 x = Activation('relu')(x)
 
-# Add the residual (original input) to the output of the above layer/block
-x = Add()([x, residual])
-x = Activation('relu')(x)  # Optional: Apply activation after adding the residual
 x = Flatten()(x)  # Flatten the output
 x = BatchNormalization()(x)
 x = Dropout(dropout_rate1)(x)  # Apply dropout
