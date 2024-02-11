@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
-image_folder = './images-for-prediction'
+image_folder = './images-new/close_up'
 image_height = 300
 image_width = 300
 model_name = 'belron-simple'
@@ -31,18 +31,18 @@ dense_3_units = 192
 dense_4_units = 96
 early_stopping = 3
 steps_per_epoch = 100
-learning_rate = 0.0001
+learning_rate = 0.001
 validation_steps = 20
 
 def scheduler(epoch, lr):
     if epoch < 50:
         return learning_rate
     elif epoch < 75:
-        return learning_rate
+        return learning_rate * .5
     elif epoch < 100:
-        return learning_rate
+        return learning_rate * .1
     else:
-        return learning_rate
+        return learning_rate * .05
 
 
 # Define your custom condition function
@@ -61,7 +61,7 @@ def model_builder():
     print("Building model")
         # ... other layers ...
     model = Sequential()
-    model.add(Conv2D(conv_1_units, (3,3), activation='relu', input_shape=(image_height, image_width, 6)))
+    model.add(Conv2D(conv_1_units, (3,3), activation='relu', input_shape=(image_height, image_width, 3)))
     model.add(MaxPooling2D(2, 2))
     model.add(DepthwiseConv2D((3,3), activation='relu'))
     model.add(BatchNormalization())
