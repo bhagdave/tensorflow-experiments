@@ -34,7 +34,7 @@ learning_rate = 0.001
 dropout_rate1 = 0.2
 dropout_rate2 = 0.5
 regularisation_rate = 0.0001
-early_stopping_patience = 10
+early_stopping_patience = 30
 num_epochs = 100
 dense_layer_size = 1024
 beta_1 = 0.9
@@ -66,11 +66,11 @@ model = Model(inputs=input_tensor, outputs=predictions)
 adam_optimizer = Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, amsgrad=False)
 
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 20:
         return learning_rate
-    elif epoch < 25:
-        return learning_rate * .5
     elif epoch < 50:
+        return learning_rate * .5
+    elif epoch < 75:
         return learning_rate * .1
     else:
         return learning_rate * .05
