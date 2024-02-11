@@ -28,12 +28,12 @@ image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.001
-dropout_rate1 = 0.3
+learning_rate = 0.01
+dropout_rate1 = 0.2
 dropout_rate2 = 0.5
-regularisation_rate = 0.0002
-early_stopping_patience = 60
-num_epochs = 300
+regularisation_rate = 0.0001
+early_stopping_patience = 10
+num_epochs = 100
 dense_layer_size = 1024
 
 
@@ -67,7 +67,7 @@ predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with so
 
 model = Model(inputs=input_tensor, outputs=predictions)
 
-rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
+rmsprop_optimizer = Adam(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
     if epoch < 20:
