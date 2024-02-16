@@ -10,7 +10,7 @@ categories = ['repair', 'replace']
 image_width = 224
 image_height = 224
 # Load the saved model
-model = load_model(f"./models/{model_name}.keras", custom_objects={'f1_score': f1_score})
+model = load_model(f"./{model_name}.keras", custom_objects={'f1_score': f1_score})
 
 def generate_data_for_prediction(directory, image_width, image_height, batch_size):
     categories = os.listdir(directory)  # List of category folder names
