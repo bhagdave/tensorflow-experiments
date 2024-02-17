@@ -29,8 +29,8 @@ model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.01
-dropout_rate1 = 0.1
-dropout_rate2 = 0.3
+dropout_rate1 = 0.15
+dropout_rate2 = 0.35
 regularisation_rate = 0.0001
 early_stopping_patience = 10
 num_epochs = 100
@@ -83,7 +83,7 @@ model.load_weights('repair-replace-cross.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=0.0001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=3, min_lr=0.0001)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
