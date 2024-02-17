@@ -30,12 +30,12 @@ image_width = 256
 model_name = 'repair-replace-resnet-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.01
-regularisation_rate = 0.00002
-early_stopping_patience = 60
+learning_rate = 0.0005
+regularisation_rate = 0.00005
+early_stopping_patience = 30
 num_epochs = 500
 dense_layer_size = 1024
-beta_1 = 0.99
+beta_1 = 0.9
 beta_2 = 0.999
 
 
@@ -73,14 +73,34 @@ def scheduler(epoch, lr):
     else:
         return learning_rate * .01
 
-model.load_weights('models/repair-replace-resnet-cross.keras')
+model.load_weights('repair-replace-resnet-cross.keras')
 model.compile(optimizer=adam_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
+
+class CustomEarlyStopping(tf.keras.callbacks.Callback):
+    def __init__(self, condition, verbose=0):
+        super(CustomEarlyStopping, self).__init__()
+        self.condition = condition
+        self.verbose = verbose
+
+    def on_epoch_end(self, epoch, logs=None):
+        if self.condition(logs):
+            self.model.stop_training = True
+            if self.verbose > 0:
+                print(f"Custom early stopping triggered at epoch {epoch + 1}.")
+
+# Define your custom condition function
+def custom_condition(logs):
+    # You can define your condition based on loss, accuracy, or any other metric
+    return logs.get('val_loss') < 0.4  # Example: Stop if loss is less than 0.2
+
+# Create the custom callback
+custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_f1 = EarlyStopping(monitor='val_f1_score',verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.summary()
 model.fit(
@@ -90,7 +110,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
+    callbacks=[custom_early_stopping, early_stopping_loss, checkpoint, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
 )
 
 # Save the model
