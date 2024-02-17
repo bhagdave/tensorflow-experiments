@@ -28,13 +28,13 @@ image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0001
+learning_rate = 0.01
 dropout_rate1 = 0.1
 dropout_rate2 = 0.3
-regularisation_rate = 0.00005
+regularisation_rate = 0.0001
 early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 1280
+dense_layer_size = 1024
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -50,12 +50,14 @@ for layer in base_model.layers:
 # Create the model
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
+residual = x
 x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
-x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
-x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 x = BatchNormalization()(x)  # Batch normalization before activation
 x = Activation('relu')(x)
 
+# Add the residual (original input) to the output of the above layer/block
+x = Add()([x, residual])
+x = Activation('relu')(x)  # Optional: Apply activation after adding the residual
 x = Flatten()(x)  # Flatten the output
 x = BatchNormalization()(x)
 x = Dropout(dropout_rate1)(x)  # Apply dropout
@@ -73,10 +75,11 @@ def scheduler(epoch, lr):
     elif epoch < 40:
         return learning_rate * .5
     elif epoch < 60:
-        return learning_rate * .05
+        return learning_rate * .1
     else:
-        return learning_rate * .01
+        return learning_rate * .05
 
+model.load_weights('repair-replace-cross.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
