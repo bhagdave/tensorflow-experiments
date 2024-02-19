@@ -22,7 +22,7 @@ batch_size = 8
 num_classes = 2
 num_epochs = 100 
 conv_1_units = 160
-dropout_rate = 0.5
+dropout_rate = 0.2
 dense_1_units = 160 
 dense_2_units = 192 
 dense_3_units = 192
@@ -30,7 +30,7 @@ dense_4_units = 96
 early_stopping = 10
 steps_per_epoch = 462
 learning_rate = 0.0001
-validation_steps = 31
+validation_steps = 20
 
 def scheduler(epoch, lr):
     if epoch < 20:
