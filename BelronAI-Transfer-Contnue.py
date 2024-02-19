@@ -1,4 +1,6 @@
 import os
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+#os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import random
 import json
@@ -17,8 +19,6 @@ from tensorflow.keras.models import Model
 import numpy as np
 from PIL import Image
 from tensorflow.keras import regularizers
-from tensorflow.keras.callbacks import TensorBoard
-import datetime
 from tensorflow.keras.initializers import HeUniform
 
 
@@ -27,14 +27,15 @@ image_height = 224
 image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
-xnum_classes = 2
-learning_rate = 0.0001
+num_classes = 2
+learning_rate = 0.01
 dropout_rate1 = 0.1
 dropout_rate2 = 0.3
-regularisation_rate = 0.00005
+regularisation_rate = 0.0001
 early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 1280
+dense_layer_size = 1024
+
 
 # Initialize the CustomImageDataGenerator for training and validation
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
@@ -74,10 +75,11 @@ def scheduler(epoch, lr):
     elif epoch < 40:
         return learning_rate * .5
     elif epoch < 60:
-        return learning_rate * .05
+        return learning_rate * .1
     else:
-        return learning_rate * .01
+        return learning_rate * .05
 
+model.load_weights('repair-replace-cross.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
@@ -85,7 +87,7 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='auto')
+early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
