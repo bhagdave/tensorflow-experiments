@@ -23,8 +23,8 @@ from tensorflow.keras.layers import GlobalAveragePooling2D, Input
 
 
 image_folder = './images-new/close_up'
-image_height = 224
-image_width = 224
+image_height = 256
+image_width = 256
 model_name = 'belron-mobilenet'
 batch_size = 8
 num_classes = 2
