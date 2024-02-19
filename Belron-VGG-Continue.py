@@ -23,18 +23,18 @@ from tensorflow.keras.initializers import HeUniform
 
 
 image_folder = './images-new/close_up'
-image_height = 256
-image_width = 256
-model_name = 'repair-replace-cross-256'
+image_height = 224
+image_width = 224
+model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.0001
-dropout_rate1 = 0.1
-dropout_rate2 = 0.3
-regularisation_rate = 0.00005
-early_stopping_patience = 10
-num_epochs = 100
-dense_layer_size = 1280
+dropout_rate1 = 0.5
+dropout_rate2 = 0.5
+regularisation_rate = 0.001
+early_stopping_patience = 100
+num_epochs = 500
+dense_layer_size = 1536
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -42,6 +42,16 @@ train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'),
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
 base_model = VGG16(weights="imagenet", include_top=False, input_shape=(image_height, image_width, 3))
+
+
+# Define your custom condition function
+def custom_condition(logs):
+    # You can define your condition based on loss, accuracy, or any other metric
+    return logs.get('val_loss') < 0.4  # Example: Stop if loss is less than 0.2
+
+# Create the custom callback
+custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
+
 
 # First: train only the top layers (which were randomly initialized)
 for layer in base_model.layers:
@@ -68,15 +78,16 @@ model = Model(inputs=input_tensor, outputs=predictions)
 rmsprop_optimizer = Adam(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 20:
+    if epoch < 10:
         return learning_rate
-    elif epoch < 40:
-        return learning_rate * .5
-    elif epoch < 60:
-        return learning_rate * .05
-    else:
+    elif epoch < 20:
+        return learning_rate * .1
+    elif epoch < 30:
         return learning_rate * .01
+    else:
+        return learning_rate * .005
 
+model.load_weights('models/repair-replace-cross.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
@@ -85,8 +96,8 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.summary()
 model.fit(
@@ -96,7 +107,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, reduce_lr, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
+    callbacks=[early_stopping_loss, checkpoint, reduce_lr, learning_rate_callback, custom_early_stopping]
 )
 
 # Save the model
