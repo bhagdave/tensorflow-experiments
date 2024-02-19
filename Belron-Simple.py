@@ -1,5 +1,4 @@
 import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import random
 import json
@@ -14,32 +13,31 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import backend as K
 import numpy as np
 from PIL import Image
-os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
 image_folder = './images-new/close_up'
-image_height = 300
-image_width = 300
-model_name = 'belron-simple'
+image_height = 256
+image_width = 256
+model_name = 'belron-simplei-256'
 batch_size = 8
 num_classes = 2
-num_epochs = 20 
+num_epochs = 100 
 conv_1_units = 160
-dropout_rate = 0.2
+dropout_rate = 0.5
 dense_1_units = 160 
 dense_2_units = 192 
 dense_3_units = 192
 dense_4_units = 96
-early_stopping = 3
-steps_per_epoch = 100
-learning_rate = 0.001
-validation_steps = 20
+early_stopping = 10
+steps_per_epoch = 462
+learning_rate = 0.0001
+validation_steps = 31
 
 def scheduler(epoch, lr):
-    if epoch < 50:
+    if epoch < 20:
         return learning_rate
-    elif epoch < 75:
+    elif epoch < 35:
         return learning_rate * .5
-    elif epoch < 100:
+    elif epoch < 50:
         return learning_rate * .1
     else:
         return learning_rate * .05
@@ -48,7 +46,7 @@ def scheduler(epoch, lr):
 # Define your custom condition function
 def custom_condition(logs):
     # You can define your condition based on loss, accuracy, or any other metric
-    return logs.get('val_loss') < 0.05  # Example: Stop if loss is less than 0.2
+    return logs.get('val_loss') < 0.2  # Example: Stop if loss is less than 0.2
 
 # Create the custom callback
 custom_early_stopping = CustomEarlyStopping(condition=custom_condition, verbose=1)
@@ -102,7 +100,6 @@ learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 # model.fit_generator(train_generator, epochs=num_epochs, validation_data=validation_generator, callbacks=[early_stopping, learning_rate_callback])
 
-print("Training model")
 # Fit the model
 model.fit(
     train_generator.generate_data(),
@@ -111,7 +108,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_steps,
     verbose=1,
-    callbacks=[learning_rate_callback, checkpoint, custom_early_stopping],
+    callbacks=[learning_rate_callback, checkpoint, custom_early_stopping, early_stopping],
 )
 
 # Save the model
