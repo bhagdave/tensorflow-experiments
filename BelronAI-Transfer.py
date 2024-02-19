@@ -23,18 +23,18 @@ from tensorflow.keras.initializers import HeUniform
 
 
 image_folder = './images-new/close_up'
-image_height = 224
-image_width = 224
-model_name = 'repair-replace-cross'
+image_height = 256
+image_width = 256
+model_name = 'repair-replace-cross-256'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0005
-dropout_rate1 = 0.4
-dropout_rate2 = 0.5
-regularisation_rate = 0.0003
+learning_rate = 0.0001
+dropout_rate1 = 0.1
+dropout_rate2 = 0.3
+regularisation_rate = 0.00005
 early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 1536
+dense_layer_size = 1280
 
 
 # Initialize the CustomImageDataGenerator for training and validation
