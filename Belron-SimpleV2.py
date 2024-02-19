@@ -33,7 +33,7 @@ dense_1_units = 256
 early_stopping = 13
 steps_per_epoch = 462
 learning_rate = 0.001
-validation_steps = 100
+validation_steps = 31
 l2_regularization = 0.001
 
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
