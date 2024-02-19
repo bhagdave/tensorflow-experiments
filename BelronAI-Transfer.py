@@ -26,7 +26,7 @@ image_folder = './images-new/close_up'
 image_height = 256
 image_width = 256
 model_name = 'repair-replace-cross-256'
-batch_size = 8
+batch_size = 12
 num_classes = 2
 learning_rate = 0.0001
 dropout_rate1 = 0.1
@@ -72,7 +72,7 @@ rmsprop_optimizer = Adam(learning_rate=learning_rate)
 def scheduler(epoch, lr):
     if epoch < 20:
         return learning_rate
-    elif epoch < 100:
+    elif epoch < 40:
         return learning_rate * .5
     elif epoch < 60:
         return learning_rate * .05
@@ -82,7 +82,7 @@ def scheduler(epoch, lr):
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,patience=4, min_lr=0.0001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=0.00005)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
