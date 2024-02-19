@@ -4,6 +4,7 @@ import os
 import tensorflow as tf
 import random
 import json
+from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerator
 from keras.models import Sequential
 from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerator
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
@@ -22,35 +23,23 @@ from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.layers import GlobalAveragePooling2D, Input
 
 
-image_folder = './images-new'
-image_height = 224
-image_width = 224
+image_folder = './images-new/close_up'
+image_height = 256
+image_width = 256
 model_name = 'belron-mobilenet'
-batch_size = 4
+batch_size = 8
 num_classes = 2
-learning_rate = 0.0003
+learning_rate = 0.001
 dropout_rate1 = 0.15
 dropout_rate2 = 0.1
 regularisation_rate = 0.03
 early_stopping_patience = 40
 num_epochs = 80
-dense_layer_size = 64
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
+dense_layer_size = 512
 
 
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 20:
         return lr
     else:
         return lr * tf.math.exp(-0.1)
@@ -71,7 +60,7 @@ x = Dropout(dropout_rate1)(x)  # 50% dropout
 
 # Add a new top layer with L2 regularisation
 x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)
-#x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
+x = Dropout(dropout_rate2)(x)  # 50% dropout after the first Dense layer
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # This is the model we will train
@@ -87,7 +76,7 @@ model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metr
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-#early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
+early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
@@ -99,7 +88,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, learning_rate_callback]
+    callbacks=[early_stopping_f1, early_stopping_accuracy, early_stopping_loss, checkpoint, learning_rate_callback]
 )
 
 # Save the model
