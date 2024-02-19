@@ -21,17 +21,17 @@ from PIL import Image
 from tensorflow.keras import regularizers
 
 image_folder = './images-new/close_up'
-image_height = 224
-image_width = 224
+image_height = 256
+image_width = 256
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.001
+learning_rate = 0.0001
 dropout_rate1 = 0.4
 dropout_rate2 = 0.5
 regularisation_rate = 0.0003
-early_stopping_patience = 100
-num_epochs = 500
+early_stopping_patience = 10
+num_epochs = 10
 dense_layer_size = 1536
 
 
@@ -39,15 +39,15 @@ dense_layer_size = 1536
 train_generator = CustomImageDataGenerator(os.path.join(image_folder, 'train/'), image_width, image_height, batch_size=batch_size)
 validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'validate/'), image_width, image_height, batch_size=batch_size)
 
-rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
+rmsprop_optimizer = Adam(learning_rate=learning_rate)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
-early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=4, mode='min')
+early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='min')
 early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 
-model = load_model(f"models/{model_name}.keras", custom_objects={'f1_score': f1_score})
+model = load_model(f"{model_name}.h5", custom_objects={'f1_score': f1_score})
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 model.fit(
@@ -57,7 +57,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, early_stopping_loss]
+    callbacks=[early_stopping_accuracy, checkpoint, early_stopping_loss]
 )
 
 # Save the model
