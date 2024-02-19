@@ -16,13 +16,12 @@ import numpy as np
 from PIL import Image
 import datetime
 from tensorflow.keras.callbacks import TensorBoard
-os.environ['TF_GRPC_TIMEOUT'] = '3600'  # Set it to 1 hour (3600 seconds)
 
 image_folder = './images-new/close_up'
 image_height = 256
 image_width = 256
 model_name = 'belron-simplev2'
-batch_size = 8
+batch_size = 12
 num_classes = 2
 num_epochs = 500
 conv_1_units = 32
@@ -30,22 +29,22 @@ conv_2_units = 64
 conv_3_units = 128
 dropout_rate = 0.5
 dense_1_units = 256 
-early_stopping = 13
-steps_per_epoch = 462
+early_stopping = 33
+steps_per_epoch = 308
 learning_rate = 0.001
-validation_steps = 31
-l2_regularization = 0.001
+validation_steps = 20
+l2_regularization = 0.005
 
 log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 
 def scheduler(epoch, lr):
-    if epoch < 16:
+    if epoch < 20:
         return learning_rate
-    elif epoch < 76:
+    elif epoch < 30:
         return learning_rate * 0.1
-    elif epoch < 200:
+    elif epoch < 40:
         return learning_rate * 0.01
     else:
         return learning_rate * 0.001
@@ -87,6 +86,7 @@ def model_builder():
     return model
 
 model = model_builder()
+model.load_weights(f"{model_name}.keras")
 model.summary()
 model.compile(
     loss='categorical_crossentropy', 

@@ -6,6 +6,7 @@ import random
 import json
 from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerator
 from keras.models import Sequential
+from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerator
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import RMSprop
