@@ -5,10 +5,10 @@ import os
 import csv
 from SharedClasses import f1_score
 
-model_name = "repair-replace-cross"
+model_name = "belron-mobilenet"
 categories = ['repair', 'replace']
-image_width = 224
-image_height = 224
+image_width = 256
+image_height = 256
 # Load the saved model
 model = load_model(f"./{model_name}.keras", custom_objects={'f1_score': f1_score})
 

@@ -23,18 +23,18 @@ from tensorflow.keras.initializers import HeUniform
 
 
 image_folder = './images-new/close_up'
-image_height = 224
-image_width = 224
+image_height = 256
+image_width = 256
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.005
-dropout_rate1 = 0.2
-dropout_rate2 = 0.2
-regularisation_rate = 0.0002
-early_stopping_patience = 10
-num_epochs = 100
-dense_layer_size = 256
+learning_rate = 0.0001
+dropout_rate1 = 0.1
+dropout_rate2 = 0.3
+regularisation_rate = 0.00005
+early_stopping_patience = 20
+num_epochs = 200
+dense_layer_size = 1280
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -75,9 +75,9 @@ rmsprop_optimizer = Adam(learning_rate=learning_rate)
 def scheduler(epoch, lr):
     if epoch < 20:
         return learning_rate
-    elif epoch < 40:
+    elif epoch < 100:
         return learning_rate * .5
-    elif epoch < 60:
+    elif epoch < 200:
         return learning_rate * .1
     else:
         return learning_rate * .05
