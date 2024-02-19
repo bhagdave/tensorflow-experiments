@@ -50,7 +50,7 @@ validation_generator = CustomImageDataGenerator(os.path.join(image_folder, 'vali
 
 base_model = MobileNet(weights='imagenet', include_top=False, input_shape=(image_height, image_width, 3))
 
-input_tensor = Input(shape=(image_height, image_width, 6))
+input_tensor = Input(shape=(image_height, image_width, 3))
 x = Conv2D(3, (1, 1))(input_tensor)  # 1x1 convolution
 x = base_model(x)
 x = GlobalAveragePooling2D()(x)

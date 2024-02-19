@@ -51,6 +51,7 @@ for layer in base_model.layers:
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
 x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
 x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
 x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 x = BatchNormalization()(x)  # Batch normalization before activation
@@ -61,6 +62,7 @@ x = BatchNormalization()(x)
 x = Dropout(dropout_rate1)(x)  # Apply dropout
 x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
 x = Dropout(dropout_rate2)(x)  # Apply dropout again
+x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
 predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
 
 model = Model(inputs=input_tensor, outputs=predictions)
@@ -70,7 +72,7 @@ rmsprop_optimizer = Adam(learning_rate=learning_rate)
 def scheduler(epoch, lr):
     if epoch < 20:
         return learning_rate
-    elif epoch < 40:
+    elif epoch < 100:
         return learning_rate * .5
     elif epoch < 60:
         return learning_rate * .05
@@ -80,7 +82,7 @@ def scheduler(epoch, lr):
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=0.0001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,patience=4, min_lr=0.0001)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
@@ -96,7 +98,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, reduce_lr, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
+    callbacks=[early_stopping_loss, checkpoint, reduce_lr, early_stopping_f1, early_stopping_accuracy]
 )
 
 # Save the model

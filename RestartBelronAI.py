@@ -56,7 +56,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_f1, early_stopping_accuracy, checkpoint, early_stopping_loss]
+    callbacks=[early_stopping_f1, early_stopping_accuracy, early_stopping_loss, checkpoint]
 )
 
 # Save the model
