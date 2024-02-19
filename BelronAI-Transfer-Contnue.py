@@ -28,13 +28,13 @@ image_width = 224
 model_name = 'repair-replace-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0001
+learning_rate = 0.01
 dropout_rate1 = 0.1
 dropout_rate2 = 0.3
-regularisation_rate = 0.00005
+regularisation_rate = 0.0001
 early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 1280
+dense_layer_size = 1024
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -75,10 +75,11 @@ def scheduler(epoch, lr):
     elif epoch < 40:
         return learning_rate * .5
     elif epoch < 60:
-        return learning_rate * .05
+        return learning_rate * .1
     else:
-        return learning_rate * .01
+        return learning_rate * .05
 
+model.load_weights('repair-replace-cross.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
