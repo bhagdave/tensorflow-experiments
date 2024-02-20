@@ -61,6 +61,7 @@ for layer in base_model.layers:
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
 x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
 x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
 x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 x = BatchNormalization()(x)  # Batch normalization before activation
@@ -71,6 +72,8 @@ x = BatchNormalization()(x)
 x = Dropout(dropout_rate1)(x)  # Apply dropout
 x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
 x = Dropout(dropout_rate2)(x)  # Apply dropout again
+x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
+
 predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
 
 model = Model(inputs=input_tensor, outputs=predictions)
