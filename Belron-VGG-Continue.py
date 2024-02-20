@@ -23,18 +23,18 @@ from tensorflow.keras.initializers import HeUniform
 
 
 image_folder = './images-new/close_up'
-image_height = 224
-image_width = 224
-model_name = 'repair-replace-cross'
+image_height = 256
+image_width = 256
+model_name = 'repair-replace-cross-256'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.0001
-dropout_rate1 = 0.5
+learning_rate = 0.001
+dropout_rate1 = 0.25
 dropout_rate2 = 0.5
-regularisation_rate = 0.001
-early_stopping_patience = 100
-num_epochs = 500
-dense_layer_size = 1536
+regularisation_rate = 0.0001
+early_stopping_patience = 9
+num_epochs = 90
+dense_layer_size = 1280
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -87,7 +87,7 @@ def scheduler(epoch, lr):
     else:
         return learning_rate * .005
 
-model.load_weights('models/repair-replace-cross.keras')
+model.load_weights('repair-replace-cross-256.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
@@ -96,7 +96,7 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
-#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 #early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.summary()
@@ -107,7 +107,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, reduce_lr, learning_rate_callback, custom_early_stopping]
+    callbacks=[early_stopping_accuracy, early_stopping_loss, checkpoint, reduce_lr, learning_rate_callback, custom_early_stopping]
 )
 
 # Save the model
