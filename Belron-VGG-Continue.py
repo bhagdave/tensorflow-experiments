@@ -32,8 +32,8 @@ learning_rate = 0.001
 dropout_rate1 = 0.35
 dropout_rate2 = 0.5
 regularisation_rate = 0.0001
-early_stopping_patience = 8
-num_epochs = 75
+early_stopping_patience = 5
+num_epochs = 50
 dense_layer_size = 1280
 
 
