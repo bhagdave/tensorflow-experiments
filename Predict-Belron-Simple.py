@@ -5,7 +5,7 @@ import os
 import csv
 from SharedClasses import f1_score
 
-model_name = "belron-simple"
+model_name = "repair-replace-cross-256"
 categories = ['repair', 'replace']
 image_width = 256
 image_height = 256
