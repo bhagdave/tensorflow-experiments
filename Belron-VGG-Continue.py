@@ -29,10 +29,10 @@ model_name = 'repair-replace-cross-256'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.001
-dropout_rate1 = 0.4
+dropout_rate1 = 0.35
 dropout_rate2 = 0.5
 regularisation_rate = 0.0001
-early_stopping_patience = 4
+early_stopping_patience = 8
 num_epochs = 40
 dense_layer_size = 1280
 
@@ -81,11 +81,11 @@ model = Model(inputs=input_tensor, outputs=predictions)
 rmsprop_optimizer = Adam(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 8:
         return learning_rate
-    elif epoch < 20:
+    elif epoch < 16:
         return learning_rate * .1
-    elif epoch < 30:
+    elif epoch < 24:
         return learning_rate * .01
     else:
         return learning_rate * .005
@@ -94,7 +94,7 @@ model.load_weights('repair-replace-cross-256.keras')
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=8, min_lr=0.0001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.3,patience=2, min_lr=0.0001)
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.h5', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
