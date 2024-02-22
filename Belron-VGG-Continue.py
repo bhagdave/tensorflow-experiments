@@ -29,11 +29,11 @@ model_name = 'repair-replace-cross-256'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.001
-dropout_rate1 = 0.35
+dropout_rate1 = 0.4
 dropout_rate2 = 0.5
 regularisation_rate = 0.0001
-early_stopping_patience = 5
-num_epochs = 50
+early_stopping_patience = 4
+num_epochs = 40
 dense_layer_size = 1280
 
 
