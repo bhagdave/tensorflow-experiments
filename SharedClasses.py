@@ -7,6 +7,60 @@ from tensorflow.keras import backend as K
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+import matplotlib.pyplot as plt
+from tensorflow.keras.callbacks import Callback
+import math
+
+class LearningRateFinder(Callback):
+    def __init__(self, start_lr=1e-7, end_lr=10, num_iters=100, beta=0.98):
+        super().__init__()
+        self.start_lr = start_lr
+        self.end_lr = end_lr
+        self.num_iters = num_iters
+        self.beta = beta
+        self.lr_mult = (end_lr / start_lr) ** (1 / num_iters)
+        self.avg_loss = 0
+        self.best_loss = 0
+        self.batch_num = 0
+        self.losses = []
+        self.lrs = []
+
+    def on_train_begin(self, logs=None):
+        self.batch_num = 0
+        self.avg_loss = 0
+        self.best_loss = 0
+        self.losses = []
+        self.lrs = []
+        K.set_value(self.model.optimizer.lr, self.start_lr)
+
+    def on_batch_end(self, batch, logs=None):
+        lr = K.get_value(self.model.optimizer.lr)
+        loss = logs['loss']
+        
+        self.batch_num += 1
+        self.avg_loss = self.beta * self.avg_loss + (1 - self.beta) * loss
+        smoothed_loss = self.avg_loss / (1 - self.beta ** self.batch_num)
+        
+        if self.batch_num > 1 and smoothed_loss > 4 * self.best_loss:
+            self.model.stop_training = True
+            return
+        
+        if smoothed_loss < self.best_loss or self.batch_num == 1:
+            self.best_loss = smoothed_loss
+        
+        self.losses.append(smoothed_loss)
+        self.lrs.append(lr)
+        
+        lr *= self.lr_mult
+        K.set_value(self.model.optimizer.lr, lr)
+        
+    def plot_loss(self):
+        plt.plot(self.lrs, self.losses)
+        plt.xscale('log')
+        plt.xlabel('Learning Rate')
+        plt.ylabel('Loss')
+        plt.show()
+
 
 class CustomImageDataGenerator:
     def __init__(self, directory, image_width, image_height, batch_size, class_mode='categorical'):
