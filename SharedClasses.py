@@ -42,7 +42,11 @@ class CustomImageDataGenerator:
                 width_shift_range=0.35,
                 height_shift_range=0.35,
                 zoom_range=0.35,
+                shear_range=0.2,
                 horizontal_flip=True,
+                vertical_flip=True,
+                brightness_range=[0.5, 1.5],
+                channel_shift_range=20,
                 fill_mode='nearest'
             )
 
