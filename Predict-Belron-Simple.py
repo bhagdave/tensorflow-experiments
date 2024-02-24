@@ -1,16 +1,28 @@
+#!/usr/bin/env python3
+
 from tensorflow.keras.models import load_model
 from PIL import Image
 import numpy as np
 import os
 import csv
+import argparse
 from SharedClasses import f1_score
 
-model_name = "repair-replace-cross-256"
+parser = argparse.ArgumentParser(description='Load a model and use it for prediction.')
+parser.add_argument('model_name', type=str, help='Nname of the model to load and use for predictions.')
+
+# Parse the command-line arguments
+args = parser.parse_args()
+
+# Extract the model filename
+model_name = args.model_name
+
+
 categories = ['repair', 'replace']
 image_width = 256
 image_height = 256
 # Load the saved model
-model = load_model(f"{model_name}.keras", custom_objects={'f1_score': f1_score})
+model = load_model(f"models/{model_name}.keras", custom_objects={'f1_score': f1_score})
 
 def generate_data_for_prediction(directory, image_width, image_height, batch_size):
     categories = os.listdir(directory)  # List of category folder names
