@@ -76,7 +76,7 @@ prediction_generator = generate_data_for_prediction(
     batch_size=8
 )
 
-with open('predictions.csv', 'w', newline='') as csvfile:
+with open(f"{model_name}-predictions.csv", 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['Filename', 'Human Category', 'Predicted Category', 'Confidence'])
 

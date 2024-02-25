@@ -43,7 +43,7 @@ early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=
 #early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 #early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 
-model = load_model(f"{model_name}.keras", custom_objects={'f1_score': f1_score})
+model = load_model(f"models/{model_name}.keras", custom_objects={'f1_score': f1_score})
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 model.fit(
@@ -57,5 +57,6 @@ model.fit(
 )
 
 # Save the model
-model.save(f"{model_name}.keras")
+print(f"Saving {model_name}")
+model.save(f"models/{model_name}.keras")
 

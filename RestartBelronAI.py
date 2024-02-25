@@ -60,5 +60,6 @@ model.fit(
 )
 
 # Save the model
+print(f"Saving {model_name}")
 model.save(f"{model_name}.keras")
 

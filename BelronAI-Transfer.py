@@ -106,5 +106,6 @@ model.fit(
 )
 
 # Save the model
-model.save(f"{model_name}.keras")
+print(f"Saving {model_name}")
+model.save(f"models/{model_name}.keras")
 

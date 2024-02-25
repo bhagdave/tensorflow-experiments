@@ -90,7 +90,7 @@ def scheduler(epoch, lr):
     else:
         return learning_rate * .001
 
-model.load_weights('repair-replace-cross-256.keras')
+model.load_weights(f"models/{model_name}.keras")
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 # Reduce learning rate when a metric has stopped improving
@@ -114,5 +114,6 @@ model.fit(
 )
 
 # Save the model
-model.save(f"{model_name}.keras")
+print(f"Saving {model_name}")
+model.save(f"models/{model_name}.keras")
 
