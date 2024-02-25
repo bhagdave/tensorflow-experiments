@@ -30,15 +30,15 @@ image_width = 256
 model_name = 'repair-replace-resnet-cross'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.001
-dropout_rate1 = 0.2
-dropout_rate2 = 0.5
-regularisation_rate = 0.0001
-early_stopping_patience = 30
+learning_rate = 0.0001
+dropout_rate1 = 0.5
+#dropout_rate2 = 0.5
+#regularisation_rate = 0.0001
+early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 1024
-beta_1 = 0.9
-beta_2 = 0.999
+#dense_layer_size = 1024
+#beta_1 = 0.9
+#beta_2 = 0.999
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -56,32 +56,33 @@ input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
 x = Flatten()(x)  # Flatten the output
 x = BatchNormalization()(x) 
-#x = Dropout(dropout_rate1)(x)  # Apply dropout
-x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
+x = Dropout(dropout_rate1)(x)  # Apply dropout
+#x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
 #x = Dropout(dropout_rate2)(x)  # Apply dropout again
 predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
 
 model = Model(inputs=input_tensor, outputs=predictions)
 
-adam_optimizer = Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, amsgrad=False)
+#adam_optimizer = Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, amsgrad=False)
+adam_optimizer = Adam(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 20:
+    if epoch < 10:
         return learning_rate
-    elif epoch < 50:
-        return learning_rate * .5
-    elif epoch < 75:
+    elif epoch < 20:
         return learning_rate * .1
+    elif epoch < 40:
+        return learning_rate * .01
     else:
-        return learning_rate * .05
+        return learning_rate * .001
 
 model.compile(optimizer=adam_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_accuracy', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 early_stopping_loss = EarlyStopping(monitor='val_loss',verbose=1, patience=early_stopping_patience, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
-early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 learning_rate_callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.summary()
 model.fit(
@@ -91,7 +92,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback, early_stopping_f1, early_stopping_accuracy]
+    callbacks=[early_stopping_loss, checkpoint, learning_rate_callback]
 )
 
 # Save the model

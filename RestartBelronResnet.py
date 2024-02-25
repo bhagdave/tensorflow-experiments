@@ -23,16 +23,12 @@ from tensorflow.keras import regularizers
 image_folder = './images-new/close_up'
 image_height = 256
 image_width = 256
-model_name = 'repair-replace-cross'
+model_name = 'repair-replace-resnet-cross'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.0001
-dropout_rate1 = 0.4
-dropout_rate2 = 0.5
-regularisation_rate = 0.0003
 early_stopping_patience = 10
-num_epochs = 10
-dense_layer_size = 1536
+num_epochs = 100
 
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -44,10 +40,10 @@ rmsprop_optimizer = Adam(learning_rate=learning_rate)
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', monitor='val_loss', save_best_only=True, mode='auto')
 # Define the early stopping criteria
 early_stopping_loss = EarlyStopping(monitor='val_loss', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='min')
-early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
+#early_stopping_accuracy = EarlyStopping(monitor='val_accuracy', min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 #early_stopping_f1 = EarlyStopping(monitor='val_f1_score',min_delta=0.001,verbose=1, patience=early_stopping_patience, mode='max')
 
-model = load_model(f"{model_name}.h5", custom_objects={'f1_score': f1_score})
+model = load_model(f"{model_name}.keras", custom_objects={'f1_score': f1_score})
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 model.fit(
@@ -57,7 +53,7 @@ model.fit(
     validation_data=validation_generator.generate_data(),
     validation_steps=validation_generator.calculate_num_samples() // validation_generator.batch_size,
     verbose=1,
-    callbacks=[early_stopping_accuracy, checkpoint, early_stopping_loss]
+    callbacks=[checkpoint, early_stopping_loss]
 )
 
 # Save the model
