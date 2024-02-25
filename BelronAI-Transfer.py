@@ -28,12 +28,12 @@ image_folder = './images-new/close_up'
 image_height = 256
 image_width = 256
 model_name = 'repair-replace-cross-256'
-batch_size = 4
+batch_size = 8
 num_classes = 2
-learning_rate = 0.01
-dropout_rate1 = 0.1
+learning_rate = 0.001
+dropout_rate1 = 0.5
 dropout_rate2 = 0.3
-regularisation_rate = 0.0001
+regularisation_rate = 0.0002
 early_stopping_patience = 10
 num_epochs = 100
 dense_layer_size = 1280
@@ -52,6 +52,7 @@ for layer in base_model.layers:
 # Create the model
 input_tensor = Input(shape=(image_height, image_width, 3))
 x = base_model(input_tensor)
+x = Dropout(dropout_rate1)(x)  # Apply dropout
 #x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
 #x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu')(x)
 #x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
@@ -61,9 +62,8 @@ x = BatchNormalization()(x)  # Batch normalization before activation
 
 x = Flatten()(x)  # Flatten the output
 #x = BatchNormalization()(x)
-#x = Dropout(dropout_rate1)(x)  # Apply dropout
 #x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
-#x = Dropout(dropout_rate2)(x)  # Apply dropout again
+x = Dropout(dropout_rate2)(x)  # Apply dropout again
 #x = Dense(dense_layer_size, activation='relu', kernel_regularizer=regularizers.l2(regularisation_rate))(x)  # Add a dense layer
 predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with softmax activation for classification
 
@@ -77,11 +77,11 @@ def scheduler(epoch, lr):
     if epoch < 10:
         return learning_rate
     elif epoch < 20:
-        return learning_rate * .5
+        return learning_rate * .1
     elif epoch < 40:
-        return learning_rate * .05
-    else:
         return learning_rate * .01
+    else:
+        return learning_rate * .001
 
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
