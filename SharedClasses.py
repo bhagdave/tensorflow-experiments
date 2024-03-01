@@ -120,6 +120,7 @@ class CustomImageDataGenerator:
             random.shuffle(all_cases)  # Shuffle cases for better training performance
             batch_images = []
             batch_labels = []  # Initialize an empty list for batch labels
+            batch_guids = []  # Initialize an empty list for batch guids
 
             for (category, guid) in all_cases:
 
@@ -133,6 +134,7 @@ class CustomImageDataGenerator:
                    
                 batch_labels.append(category)
                 batch_images.append(image_array)
+                batch_guids.append(guid)
 
                 if len(batch_images) == self.batch_size:
                     batch_images = np.array(batch_images)
@@ -142,15 +144,17 @@ class CustomImageDataGenerator:
                         batch_labels = [label_to_index[label] for label in batch_labels]
                         batch_labels = tf.keras.utils.to_categorical(batch_labels, len(categories))
 
-                    yield batch_images, batch_labels
+                    yield batch_images, batch_labels, batch_guids
 
                     # Clear the batch lists
                     batch_images = []
                     batch_labels = []  # Clear the batch labels
+                    batch_guids = []  # Clear the batch guids
             
             # If there are not enough images left to form a full batch, discard them
             batch_images = []
             batch_labels = []
+            batch_guids = []
 
 class CustomEarlyStopping(tf.keras.callbacks.Callback):
     def __init__(self, condition, verbose=0):

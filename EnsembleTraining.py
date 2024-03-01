@@ -19,16 +19,20 @@ def load_ensemble_models(model_filenames):
 
 def ensemble_predictions(models, generator, total_images):
     processed_images = 0
+    labels = ['repair','replace']
 
-    for X_batch, _ in generator:
-        batch_preds = [model.predict(X_batch) for model in models]
+    for X_batch, batch_labels, batch_guids in generator:
+        batch_preds = [model.predict(X_batch, verbose=0) for model in models]
         avg_batch_pred = np.mean(batch_preds, axis=0)  # Average predictions from all models
 
         # Process each prediction in the batch
         for i, pred in enumerate(avg_batch_pred):
             # pred contains the prediction values (probabilities) for each class
             predicted_class = np.argmax(pred)
-            print(f'Processed image {processed_images + 1}/{total_images}: Predicted class = {predicted_class}, Prediction values = {pred}')
+            label = batch_labels[i]
+            guid = batch_guids[i]
+            print(f'{guid},{labels[predicted_class]},{pred[0]}')
+            #print(f'Processed image {processed_images + 1}/{total_images}: Predicted class = {predicted_class}, Prediction values = {pred}')
             processed_images += 1
 
             if processed_images >= total_images:
@@ -43,18 +47,13 @@ model_filenames = [model1_name, model2_name, model3_name, model4_name]
 models = load_ensemble_models(model_filenames)
 
 image_directory = 'images-testing/close_up'
-image_width = 256 
+image_width = 256
 image_height = 256
-batch_size = 4   
+batch_size = 4
 
 data_generator = CustomImageDataGenerator(image_directory, image_width, image_height, batch_size)
 generator = data_generator.generate_data(is_training=False)
 
-ensemble_pred = ensemble_predictions(models, generator, data_generator.calculate_num_samples())
 
-ensemble_labels = np.argmax(ensemble_pred, axis=1)
-y_test_labels = np.argmax(['repair','replace'], axis=1) 
-
-ensemble_accuracy = accuracy_score(y_test_labels, ensemble_labels)
-print(f'Ensemble Model Accuracy: {ensemble_accuracy}')
-
+print('guid, predicted_class, repair_prediction_value')
+ensemble_predictions(models, generator, data_generator.calculate_num_samples())
