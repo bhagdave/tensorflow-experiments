@@ -23,19 +23,19 @@ from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.layers import GlobalAveragePooling2D, Input
 
 
-image_folder = './images-new/close_up'
+image_folder = './images-for-prediction'
 image_height = 256
 image_width = 256
 model_name = 'belron-mobilenet'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.001
-dropout_rate1 = 0.5
+dropout_rate1 = 0.4
 dropout_rate2 = 0.5
 regularisation_rate = 0.03
 early_stopping_patience = 10
 num_epochs = 100
-dense_layer_size = 512
+dense_layer_size = 1024
 
 def scheduler(epoch, lr):
     if epoch < 10:
