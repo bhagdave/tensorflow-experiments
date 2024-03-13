@@ -10,7 +10,7 @@ from SharedClasses import f1_score, CustomEarlyStopping, CustomImageDataGenerato
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import RMSprop
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import backend as K
 from tensorflow.keras.applications import VGG16
@@ -29,9 +29,9 @@ image_width = 256
 model_name = 'belron-mobilenet'
 batch_size = 8
 num_classes = 2
-learning_rate = 0.001
-dropout_rate1 = 0.4
-dropout_rate2 = 0.5
+learning_rate = 0.0001
+dropout_rate1 = 0.5
+dropout_rate2 = 0.6
 regularisation_rate = 0.03
 early_stopping_patience = 10
 num_epochs = 100
@@ -73,8 +73,9 @@ model = Model(inputs=input_tensor, outputs=predictions)
 for layer in base_model.layers:
     layer.trainable = False
 
-rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
+rmsprop_optimizer = SGD(learning_rate=learning_rate)
 
+model.load_weights(f"models/{model_name}.keras")
 model.compile(optimizer=rmsprop_optimizer, loss='categorical_crossentropy', metrics=['accuracy', f1_score])
 
 checkpoint = ModelCheckpoint("model-{epoch:03d}.keras", monitor='val_accuracy', save_best_only=True, mode='auto')
