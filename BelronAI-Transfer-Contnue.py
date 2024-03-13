@@ -31,7 +31,7 @@ num_classes = 2
 learning_rate = 0.0001
 dropout_rate1 = 0.5
 dropout_rate2 = 0.2
-early_stopping_patience = 12
+early_stopping_patience = 10
 num_epochs = 100
 
 # Initialize the CustomImageDataGenerator for training and validation
@@ -59,11 +59,11 @@ model = Model(inputs=input_tensor, outputs=predictions)
 rmsprop_optimizer = Adam(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 5:
+    if epoch < 10:
         return learning_rate
-    elif epoch < 15:
-        return learning_rate * .1
     elif epoch < 20:
+        return learning_rate * .1
+    elif epoch < 40:
         return learning_rate * .01
     else:
         return learning_rate * .001

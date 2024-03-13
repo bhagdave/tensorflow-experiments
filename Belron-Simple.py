@@ -18,7 +18,7 @@ image_folder = './images-for-prediction'
 image_height = 256
 image_width = 256
 model_name = 'belron-simple-256'
-batch_size = 8
+batch_size = 16
 num_classes = 2
 num_epochs = 100 
 conv_1_units = 256
@@ -28,9 +28,9 @@ dense_2_units = 512
 dense_3_units = 768
 dense_4_units = 320
 early_stopping = 10
-steps_per_epoch = 326
-learning_rate = 0.001
-validation_steps = 43
+steps_per_epoch = 163
+learning_rate = 0.0001
+validation_steps = 21
 
 def scheduler(epoch, lr):
     if epoch < 10:

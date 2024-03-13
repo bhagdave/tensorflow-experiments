@@ -64,7 +64,7 @@ def generate_data_for_prediction(directory, image_width, image_height, batch_siz
         if len(batch_images) == 0:
             break
 
-        yield np.array(batch_images), batch_filenames, batch_categories  # Convert the list of images to a NumPy array
+        yield np.array(batch_images), batch_filenames, batch_categories 
 
 correct = 0
 total = 0

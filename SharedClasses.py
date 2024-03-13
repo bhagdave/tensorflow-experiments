@@ -129,8 +129,8 @@ class CustomImageDataGenerator:
                 image = Image.open(image_path)
                 image = image.resize((self.image_width, self.image_height))
                 image_array = np.array(image) / 255.0
-                #if is_training:
-                #    image_array = datagen.random_transform(image_array)  # Apply transformations
+                if is_training:
+                    image_array = datagen.random_transform(image_array)  # Apply transformations
                    
                 batch_labels.append(category)
                 batch_images.append(image_array)
