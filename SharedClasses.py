@@ -144,7 +144,7 @@ class CustomImageDataGenerator:
                         batch_labels = [label_to_index[label] for label in batch_labels]
                         batch_labels = tf.keras.utils.to_categorical(batch_labels, len(categories))
 
-                    yield batch_images, batch_labels, batch_guids
+                    yield batch_images, batch_labels
 
                     # Clear the batch lists
                     batch_images = []

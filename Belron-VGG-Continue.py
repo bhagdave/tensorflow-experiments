@@ -11,6 +11,7 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.layers import DepthwiseConv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras import backend as K
 from tensorflow.keras.applications import VGG16
@@ -30,9 +31,9 @@ model_name = 'repair-replace-cross-256'
 batch_size = 8
 num_classes = 2
 learning_rate = 0.001
-dropout_rate1 = 0.5
-dropout_rate2 = 0.3
-regularisation_rate = 0.0002
+dropout_rate1 = 0.6
+dropout_rate2 = 0.6
+regularisation_rate = 0.0004
 early_stopping_patience = 10
 num_epochs = 100
 dense_layer_size = 1280
@@ -78,14 +79,15 @@ predictions = Dense(num_classes, activation='softmax')(x)  # Final layer with so
 
 model = Model(inputs=input_tensor, outputs=predictions)
 
-rmsprop_optimizer = Adam(learning_rate=learning_rate)
+#rmsprop_optimizer = RMSprop(learning_rate=learning_rate)
+rmsprop_optimizer = SGD(learning_rate=learning_rate)
 
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 5:
         return learning_rate
-    elif epoch < 20:
+    elif epoch < 15:
         return learning_rate * .1
-    elif epoch < 40:
+    elif epoch < 20:
         return learning_rate * .01
     else:
         return learning_rate * .001

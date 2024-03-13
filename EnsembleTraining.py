@@ -43,7 +43,10 @@ def ensemble_predictions(models, generator, total_images):
 
 
 
-model_filenames = [model1_name, model2_name, model3_name, model4_name]
+#model_filenames = [model1_name, model2_name, model3_name, model4_name]
+#model_filenames = [model1_name, model3_name, model4_name]
+#model_filenames = [model2_name, model4_name]
+model_filenames = [model2_name]
 models = load_ensemble_models(model_filenames)
 
 image_directory = 'images-testing/close_up'

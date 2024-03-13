@@ -82,7 +82,7 @@ with open(f"{model_name}-predictions.csv", 'w', newline='') as csvfile:
 
     # Use the generator to get predictions
     for batch, filenames, human_categories in prediction_generator:
-        predictions = model.predict(batch)
+        predictions = model.predict(batch, verbose=0)
         # Process predictions
         predicted_index = np.argmax(predictions, axis=1)
         predicted_category = [categories[i] for i in predicted_index]
